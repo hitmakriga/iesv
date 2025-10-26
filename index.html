@@ -453,7 +453,7 @@
                 <div class="game-column">
                     <!-- Laika vadība -->
                     <div class="timer-section">
-                        <div class="time-display" id="timeDisplay">07:00</div>
+                        <div class="time-display" id="timeDisplay">05:00</div>
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressFill"></div>
                         </div>
@@ -504,13 +504,10 @@
             "BTN2": { name: "ZALš", color: "#2E8B57", textColor: "white" },
             "BTN3": { name: "BALts", color: "#F8F8FF", textColor: "black" },
             "BTN4": { name: "MELns", color: "#000000", textColor: "white" },
-            "BTN5": { name: "PELēks", color: "#808080", textColor: "white" },
-            "BTN6": { name: "SARKans", color: "#DC143C", textColor: "white" },
-            "BTN7": { name: "DZELtens", color: "#FFD700", textColor: "black" },
-            "BTN8": { name: "ZILš", color: "#1E90FF", textColor: "white" }
+            "BTN5": { name: "PELēks", color: "#808080", textColor: "white" }
         };
 
-        const ORDER = ["BTN1", "BTN2", "BTN3", "BTN4", "BTN5", "BTN6", "BTN7", "BTN8"];
+        const ORDER = ["BTN1", "BTN2", "BTN3", "BTN4", "BTN5"];
 
         // --- SPĒLES STĀVOKLIS ---
         let gameState = {
@@ -534,86 +531,93 @@
         });
 
         function initializeGame() {
-            // Ģenerē sarežģītāku slepeno kodu
-            gameState.secret = generateComplexSecret();
+            // Ģenerē ļoti sarežģītu slepeno kodu
+            gameState.secret = generateVeryHardSecret();
             
-            // Ģenerē grūtākus hintus
-            gameState.generatedHints = generateHardHints();
+            // Ģenerē ļoti grūtus hintus
+            gameState.generatedHints = generateVeryHardHints();
             
             // Atjaunina UI
             renderHints();
             updateTimerDisplay();
             updateCurrentInput();
             
-            console.log("Grūtais slepenais kods:", gameState.secret.map(c => COLORS[c].name));
+            console.log("Ļoti grūtais slepenais kods:", gameState.secret.map(c => COLORS[c].name));
         }
 
-        function generateComplexSecret() {
-            // Izveido kodu ar vairākām krāsām un atkārtojumiem
+        function generateVeryHardSecret() {
             const secret = [];
-            const availableColors = [...ORDER];
             
-            // Pievieno dažādas krāsas, atļaujot atkārtojumus
-            for (let i = 0; i < CODE_LENGTH; i++) {
-                // 40% iespēja atkārtot krāsu
-                if (i > 0 && Math.random() < 0.4) {
-                    secret.push(secret[Math.floor(Math.random() * i)]);
-                } else {
-                    const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
-                    secret.push(randomColor);
-                }
+            // Izveido kodu ar daudziem atkārtojumiem un sarežģītiem rakstiem
+            const patterns = [
+                ['BTN1', 'BTN1', 'BTN2', 'BTN2', 'BTN3'], // Dubultās krāsas
+                ['BTN4', 'BTN5', 'BTN4', 'BTN5', 'BTN4'], // Mainīgs raksts
+                ['BTN1', 'BTN3', 'BTN5', 'BTN3', 'BTN1'], // Simetrisks
+                ['BTN2', 'BTN2', 'BTN4', 'BTN4', 'BTN1'], // Grupēts
+                ['BTN5', 'BTN3', 'BTN5', 'BTN2', 'BTN5']  // Dominējoša krāsa
+            ];
+            
+            // Izvēlas nejaušu rakstu
+            const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+            
+            // Nejauši samaisa rakstu vai atstāj to pašu
+            if (Math.random() < 0.7) {
+                return [...pattern].sort(() => Math.random() - 0.5);
             }
-            return secret;
+            return pattern;
         }
 
-        function generateHardHints() {
+        function generateVeryHardHints() {
             const hints = [];
             
-            // 1. Hinti ar vairāk kļūdām
-            for (let i = 0; i < 4; i++) {
+            // 1. Hinti ar daudz kļūdām (3-4 nepareizas krāsas)
+            for (let i = 0; i < 3; i++) {
                 let guess = [...gameState.secret];
-                
-                // Maina 2-4 pozīcijas (vairāk nekā vieglajā režīmā)
-                const changes = Math.floor(Math.random() * 3) + 2;
+                const changes = Math.floor(Math.random() * 2) + 3; // 3-4 izmaiņas
                 for (let j = 0; j < changes; j++) {
                     const pos = Math.floor(Math.random() * CODE_LENGTH);
                     guess[pos] = ORDER[Math.floor(Math.random() * ORDER.length)];
                 }
-                
                 const result = evaluateGuess(guess, true);
-                hints.push({ guess, result, type: 'hard' });
+                hints.push({ guess, result, type: 'very_wrong' });
             }
             
-            // 2. Hinti ar mazāk kļūdām, bet maldinoši
+            // 2. Hinti ar pareizām krāsām, bet nepareizām vietām
             for (let i = 0; i < 2; i++) {
                 let guess = [...gameState.secret];
-                
-                // Maina tikai 1 pozīciju, bet uz līdzīgu krāsu
-                const pos = Math.floor(Math.random() * CODE_LENGTH);
-                const similarColors = getSimilarColors(guess[pos]);
-                guess[pos] = similarColors[Math.floor(Math.random() * similarColors.length)];
-                
+                // Samaina 2-3 blakus esošās krāsas
+                const swapCount = Math.floor(Math.random() * 2) + 2;
+                for (let j = 0; j < swapCount; j++) {
+                    const pos1 = Math.floor(Math.random() * CODE_LENGTH);
+                    let pos2;
+                    do {
+                        pos2 = Math.floor(Math.random() * CODE_LENGTH);
+                    } while (pos2 === pos1);
+                    
+                    // Samaina vietām
+                    [guess[pos1], guess[pos2]] = [guess[pos2], guess[pos1]];
+                }
                 const result = evaluateGuess(guess, true);
-                hints.push({ guess, result, type: 'misleading' });
+                hints.push({ guess, result, type: 'swapped' });
             }
             
-            // Samaisa hintus
+            // 3. Hints, kas ir gandrīz pareizs, bet ar vienu mazu kļūdu
+            for (let i = 0; i < 1; i++) {
+                let guess = [...gameState.secret];
+                // Maina tikai vienu krāsu uz līdzīgu
+                const pos = Math.floor(Math.random() * CODE_LENGTH);
+                const currentColor = guess[pos];
+                let newColor;
+                do {
+                    newColor = ORDER[Math.floor(Math.random() * ORDER.length)];
+                } while (newColor === currentColor);
+                guess[pos] = newColor;
+                
+                const result = evaluateGuess(guess, true);
+                hints.push({ guess, result, type: 'almost_correct' });
+            }
+            
             return hints.sort(() => Math.random() - 0.5);
-        }
-
-        function getSimilarColors(colorId) {
-            // Atgriež līdzīgas krāsas (maldinošus variantus)
-            const colorGroups = {
-                "BTN1": ["BTN1", "BTN8", "BTN6"], // Violets, Zils, Sarkans
-                "BTN2": ["BTN2", "BTN5", "BTN7"], // Zaļš, Pelēks, Dzeltenš
-                "BTN3": ["BTN3", "BTN5", "BTN7"], // Balts, Pelēks, Dzeltenš
-                "BTN4": ["BTN4", "BTN5", "BTN1"], // Melns, Pelēks, Violets
-                "BTN5": ["BTN5", "BTN3", "BTN4"], // Pelēks, Balts, Melns
-                "BTN6": ["BTN6", "BTN1", "BTN8"], // Sarkans, Violets, Zils
-                "BTN7": ["BTN7", "BTN2", "BTN3"], // Dzeltenš, Zaļš, Balts
-                "BTN8": ["BTN8", "BTN1", "BTN6"]  // Zils, Violets, Sarkans
-            };
-            return colorGroups[colorId] || [colorId];
         }
 
         function evaluateGuess(guess, preview = false) {
@@ -714,7 +718,7 @@
         function processSerialInput(text) {
             if (text.startsWith("BTN") && ORDER.includes(text.substring(0, 4))) {
                 addInput(text.substring(0, 4));
-            } else if (/^[1-8]$/.test(text)) {
+            } else if (/^[1-5]$/.test(text)) {
                 addInput(`BTN${text}`);
             }
         }
@@ -755,8 +759,7 @@
         }
 
         function adjustColor(color, amount) {
-            // Vienkārša krāsas korekcija gradientiem
-            return color; // Vienkāršots variants
+            return color;
         }
 
         function renderHints() {
@@ -767,8 +770,13 @@
                 const row = document.createElement('div');
                 row.className = 'hint-row';
                 
-                if (type === 'misleading') {
+                // Dažādas krāsas atkarībā no hinta veida
+                if (type === 'almost_correct') {
                     row.style.borderLeftColor = '#ffaa00';
+                } else if (type === 'very_wrong') {
+                    row.style.borderLeftColor = '#ff4444';
+                } else {
+                    row.style.borderLeftColor = '#00ccff';
                 }
                 
                 guess.forEach(colorId => {
@@ -782,6 +790,14 @@
                 const hintText = document.createElement('span');
                 hintText.className = 'hint-text';
                 hintText.textContent = makeHintText(result);
+                
+                // Pievieno ikonu atkarībā no hinta veida
+                let icon = '';
+                if (type === 'almost_correct') icon = '🔸 ';
+                else if (type === 'very_wrong') icon = '❌ ';
+                else if (type === 'swapped') icon = '🔄 ';
+                
+                hintText.textContent = icon + makeHintText(result);
                 row.appendChild(hintText);
                 
                 container.appendChild(row);
@@ -949,10 +965,10 @@
             
             setTimeout(() => {
                 if (victory) {
-                    alert('🎉 APSVEICAM! Tu atminēji kodu grūtajā režīmā!');
+                    alert('🎉 APSVEICAM! Tu atminēji ļoti grūto kodu!');
                     window.open('https://youtube.com', '_blank');
                 } else {
-                    alert('💣 ZAUDĒJI! Mēģini vēlreiz!');
+                    alert('💣 ZAUDĒJI! Šoreiz neizdevās! Mēģini vēlreiz!');
                     window.open('https://ss.com', '_blank');
                 }
             }, 1000);
