@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<title>💣 Bomb Puzzle Master</title>
+<style>
+  body { background: #0c0c0c; color: white; font-family: "Segoe UI", sans-serif; }
+  h1 { color: #00ffcc; text-align: center; font-size: 38px; margin-top: 20px; }
+  .container { display: flex; padding: 20px; }
+  .hints, .game { padding: 10px; }
+  .hints { width: 40%; }
+  .game { width: 60%; }
+  .hint-row, .guess-row { display: flex; align-items: center; margin-bottom: 5px; }
+  .color-box { width: 30px; height: 30px; margin-right: 5px; text-align: center; line-height: 30px; font-weight: bold; }
+  .button { font-size: 16px; padding: 8px 12px; margin: 2px; cursor: pointer; }
+  .color-btn { width: 80px; height: 40px; margin: 2px; color: white; font-weight: bold; border: none; cursor: pointer; }
+  #timer { font-size: 22px; color: red; }
+  #history { max-height: 200px; overflow-y: auto; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>💣 SPRIDZEKĻA KODA PUZLE 💣</h1>
+
+<div class="container">
+  <div class="hints">
+    <h2>Sākotnējie pavedieni:</h2>
+    <div id="hints"></div>
+  </div>
+  <div class="game">
+    <div id="timer">Laiks: 07:00</div>
+    <div>
+      <button id="startTimer" class="button">▶️ START</button>
+      <button id="stopTimer" class="button">⏸️ STOP</button>
+      <button id="connectSerial" class="button">🔌 Pieslēgt COM</button>
+    </div>
+    <h3>Tava kombinācija:</h3>
+    <div id="currentInput"></div>
+
+    <div id="colorButtons"></div>
+    <button id="deleteBtn" class="button">⬅️ DZĒST</button>
+    <button id="submitBtn" class="button">✅ IESNIEGT</button>
+
+    <h3>Tavi mēģinājumi:</h3>
+    <div id="history"></div>
+  </div>
+</div>
+
+<script>
+const COLORS = {
+  BTN1: { name: "Violets", color: "#8A2BE2" },
+  BTN2: { name: "Zaļš", color: "#2E8B57" },
+  BTN3: { name: "Balts", color: "#F8F8FF", text: "black" },
+  BTN4: { name: "Melns", color: "#000000" },
+  BTN5: { name: "Pelēks", color: "#808080" }
+};
+const ORDER = ["BTN1","BTN2","BTN3","BTN4","BTN5"];
+const CODE_LENGTH = 5;
+const TOTAL_TIME = 420; // 7 minūtes
+const PENALTY = 30;
+
+let secret = [];
+let current = [];
+let hints = [];
+let timeLeft = TOTAL_TIME;
+let timerRunning = false;
+let gameOver = false;
+
+// --- Serial API ---
+let port;
+async function connectSerial() {
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 9600 });
+    const decoder = new TextDecoderStream();
+    port.readable.pipeTo(decoder.writable);
+    const reader = decoder.readable.getReader();
+    console.log("[DEBUG] COM pieslēgts!");
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value) handleInput(value.trim().toUpperCase());
+    }
+  } catch (err) {
+    console.error("COM pieslēgšanas kļūda:", err);
+  }
+}
+
+// --- Slepenā koda ģenerēšana ---
+function generateSecret() {
+  secret = [];
+  for (let i=0;i<CODE_LENGTH;i++) secret.push(ORDER[Math.floor(Math.random()*ORDER.length)]);
+  console.log("[DEBUG] Slepenais kods:", secret.map(c => COLORS[c].name));
+}
+
+// --- Hintu ģenerēšana ---
+function generateHints() {
+  hints = [];
+  for (let i=0;i<6;i++){
+    let guess = [...secret];
+    for (let j=0;j<Math.floor(Math.random()*2+1);j++){
+      let pos = Math.floor(Math.random()*CODE_LENGTH);
+      guess[pos] = ORDER[Math.floor(Math.random()*ORDER.length)];
+    }
+    hints.push({guess: guess, result: evaluateGuess(guess,true)});
+  }
+  renderHints();
+}
+
+function evaluateGuess(guess,preview=false){
+  let secretCopy = [...secret];
+  let guessCopy = [...guess];
+  let correct = 0, wrong = 0;
+  for(let i=CODE_LENGTH-1;i>=0;i--){
+    if(guessCopy[i]===secretCopy[i]){
+      correct++; guessCopy.splice(i,1); secretCopy.splice(i,1);
+    }
+  }
+  guessCopy.forEach(g=>{
+    let idx = secretCopy.indexOf(g);
+    if(idx>=0){ wrong++; secretCopy.splice(idx,1); }
+  });
+  if(!preview && timerRunning) timeLeft -= PENALTY;
+  return {correct,wrong};
+}
+
+// --- UI Rendering ---
+function renderHints(){
+  const hintsDiv = document.getElementById("hints");
+  hintsDiv.innerHTML="";
+  hints.forEach(h=>{
+    let row = document.createElement("div"); row.className="hint-row";
+    h.guess.forEach(g=>{
+      let box = document.createElement("div"); box.className="color-box";
+      box.style.background=COLORS[g].color;
+      box.style.color = COLORS[g].text||"white";
+      box.textContent="⬛";
+      row.appendChild(box);
+    });
+    let text = document.createElement("span");
+    let r = h.result;
+    if(r.correct===0 && r.wrong===0) text.textContent="Nekas nav pareizs.";
+    else if(r.correct===1 && r.wrong===0) text.textContent="1 pareizs vietā.";
+    else if(r.correct>1 && r.wrong===0) text.textContent=r.correct+" pareizi vietā.";
+    else if(r.correct===0 && r.wrong===1) text.textContent="1 pareizs, bet citā vietā.";
+    else if(r.correct===0 && r.wrong>1) text.textContent=r.wrong+" pareizi, bet citās vietās.";
+    else text.textContent=r.correct+" vietā, "+r.wrong+" citur.";
+    row.appendChild(text);
+    hintsDiv.appendChild(row);
+  });
+}
+
+function renderCurrentInput(){
+  document.getElementById("currentInput").textContent=current.map(c=>COLORS[c].name).join(", ");
+}
+
+function renderHistoryRow(guess,resultText){
+  const history = document.getElementById("history");
+  let row = document.createElement("div"); row.className="guess-row";
+  guess.forEach(g=>{
+    let box = document.createElement("div"); box.className="color-box";
+    box.style.background=COLORS[g].color;
+    box.style.color=COLORS[g].text||"white";
+    box.textContent="⬛";
+    row.appendChild(box);
+  });
+  let txt = document.createElement("span");
+  txt.textContent=resultText;
+  row.appendChild(txt);
+  history.appendChild(row);
+}
+
+function handleInput(btn){
+  if(gameOver) return;
+  if(current.length<CODE_LENGTH) current.push(btn);
+  renderCurrentInput();
+}
+
+// --- Buttons ---
+function setupColorButtons(){
+  const div = document.getElementById("colorButtons");
+  ORDER.forEach(c=>{
+    let b = document.createElement("button");
+    b.className="color-btn"; b.textContent=COLORS[c].name;
+    b.style.background=COLORS[c].color;
+    b.style.color=COLORS[c].text||"white";
+    b.onclick = ()=>{ handleInput(c); };
+    div.appendChild(b);
+  });
+}
+
+document.getElementById("deleteBtn").onclick = ()=>{
+  if(current.length>0) current.pop();
+  renderCurrentInput();
+};
+
+document.getElementById("submitBtn").onclick = ()=>{
+  if(current.length<CODE_LENGTH){
+    alert("Ievadi visas 5 krāsas pirms iesniegšanas!");
+    return;
+  }
+  let resText="";
+  if(current.join("")===secret.join("")){
+    resText="🎉 Uzvara!";
+    gameOver=true;
+    setTimeout(()=>{ window.open("https://youtube.com"); },500);
+  } else if(timeLeft<=0){
+    resText="💣 Zaudējums!";
+    gameOver=true;
+    setTimeout(()=>{ window.open("https://ss.com"); },500);
+  } else {
+    let r = evaluateGuess(current);
+    resText = r.correct+" vietā, "+r.wrong+" citur.";
+    timeLeft -= PENALTY;
+  }
+  renderHistoryRow(current,resText);
+  current=[];
+  renderCurrentInput();
+};
+
+// --- Timer ---
+function updateTimer(){
+  if(timerRunning && !gameOver){
+    timeLeft--;
+    if(timeLeft<=0){ timeLeft=0; gameOver=true; setTimeout(()=>{ window.open("https://ss.com"); },500);}
+    let min = Math.floor(timeLeft/60).toString().padStart(2,"0");
+    let sec = (timeLeft%60).toString().padStart(2,"0");
+    document.getElementById("timer").textContent="Laiks: "+min+":"+sec;
+    setTimeout(updateTimer,1000);
+  }
+}
+
+document.getElementById("startTimer").onclick = ()=>{
+  if(!timerRunning){ timerRunning=true; updateTimer(); }
+};
+document.getElementById("stopTimer").onclick = ()=>{ timerRunning=false; };
+
+document.getElementById("connectSerial").onclick = ()=>{ connectSerial(); };
+
+// --- Init ---
+generateSecret();
+generateHints();
+setupColorButtons();
+</script>
+</body>
+</html>
