@@ -1,604 +1,143 @@
 <!DOCTYPE html>
 <html lang="lv">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>💣 Bomb Puzzle Master - HARD (Full)</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💣 Bomb Puzzle Master - GRŪTS REŽĪMS</title>
 <style>
-/* --- DIZAINS: saglabāts nemainīts pēc tava lūguma --- */
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:linear-gradient(135deg,#0c0c0c 0%,#1a1a2e 50%,#16213e 100%);color:white;min-height:100vh;overflow-x:hidden}
-.fullscreen{position:fixed;top:0;left:0;width:100vw;height:100vh;overflow-y:auto}
-.container{max-width:1800px;margin:0 auto;padding:20px}
-.header{text-align:center;margin-bottom:30px;position:relative}
-.title{font-size:3rem;font-weight:bold;background:linear-gradient(45deg,#ff0000,#ff6b6b,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 20px rgba(255,0,0,.5);margin-bottom:10px}
-.subtitle{font-size:1.2rem;color:#ff6b6b;margin-bottom:20px}
-.control-panel{position:fixed;top:20px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:1000}
-.control-btn{padding:12px 20px;font-size:1rem;font-weight:bold;border:none;border-radius:8px;cursor:pointer;transition:all .3s ease;background:#333;color:white;border:2px solid #555}
-.control-btn:hover{transform:scale(1.05);background:#444}
-.btn-connect{background:linear-gradient(45deg,#228B22,#32CD32);border-color:#00ff00}
-.btn-disconnect{background:linear-gradient(45deg,#cc0000,#ff4444);border-color:#ff6666}
-.btn-fullscreen{background:linear-gradient(45deg,#1a1a2e,#16213e);border-color:#00ccff}
-.serial-status{padding:10px 15px;border-radius:5px;font-weight:bold;text-align:center;min-width:200px}
-.serial-connected{background:rgba(34,139,34,.2);color:#00ff00;border:2px solid #00ff00}
-.serial-disconnected{background:rgba(204,0,0,.2);color:#ff4444;border:2px solid #ff4444}
-.columns{display:flex;gap:30px;margin-bottom:30px}
-.hints-column{flex:1;min-width:450px}
-.game-column{flex:2;min-width:700px}
-.section-title{font-size:1.8rem;font-weight:bold;color:#00ccff;margin-bottom:15px;text-shadow:0 0 10px rgba(0,204,255,.5);border-bottom:2px solid #00ccff;padding-bottom:5px}
-.difficulty-badge{display:inline-block;padding:5px 15px;background:linear-gradient(45deg,#ff0000,#ff6b6b);color:white;border-radius:20px;font-weight:bold;margin-left:15px;font-size:1rem}
-.hint-table{background:rgba(26,26,26,.8);border-radius:15px;padding:20px;margin-bottom:20px;border:2px solid #333;backdrop-filter:blur(10px)}
-.hint-row{display:flex;align-items:center;margin-bottom:12px;padding:12px;background:rgba(42,42,42,.9);border-radius:8px;border-left:4px solid #ff6b6b;transition:all .3s ease}
-.hint-row:hover{transform:translateX(5px);border-left-color:#00ff00}
-.color-dot{width:35px;height:35px;border-radius:50%;margin-right:10px;border:3px solid #444;display:inline-block;box-shadow:0 0 10px rgba(0,0,0,.5)}
-.timer-section{text-align:center;margin-bottom:30px;background:rgba(26,26,26,.8);border-radius:15px;padding:25px;border:2px solid #333}
-.time-display{font-family:'Consolas',monospace;font-size:2.5rem;color:#ff4444;margin-bottom:20px;text-shadow:0 0 15px #ff4444;background:rgba(0,0,0,.5);padding:15px;border-radius:10px;border:2px solid #ff4444}
-.progress-bar{width:100%;height:25px;background:#333;border-radius:12px;overflow:hidden;margin-bottom:20px;border:2px solid #444}
-.progress-fill{height:100%;background:linear-gradient(90deg,#ff0000,#ff6b6b,#ff0000);transition:width 1s linear;box-shadow:0 0 10px rgba(255,0,0,.5);width:100%}
-.timer-controls{display:flex;gap:20px;justify-content:center;margin-bottom:25px}
-.btn{padding:15px 30px;font-size:1.3rem;font-weight:bold;border:none;border-radius:10px;cursor:pointer;transition:all .3s ease;box-shadow:0 5px 15px rgba(0,0,0,.3)}
-.btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.4)}
-.btn:active{transform:translateY(0)}
-.btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
-.btn-start{background:linear-gradient(45deg,#228B22,#32CD32);color:white}
-.btn-stop{background:linear-gradient(45deg,#cc0000,#ff4444);color:white}
-.btn-delete{background:linear-gradient(45deg,#444,#666);color:white}
-.btn-submit{background:linear-gradient(45deg,#228B22,#32CD32);color:white}
-.current-input{text-align:center;margin-bottom:30px;padding:25px;background:rgba(26,26,26,.8);border-radius:15px;border:2px solid #00ccff}
-.current-input-text{font-size:1.5rem;color:white;min-height:50px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;padding:15px;background:rgba(0,0,0,.3);border-radius:10px;border:1px solid #444}
-.color-tag{padding:10px 20px;border-radius:25px;font-weight:bold;border:2px solid transparent;box-shadow:0 3px 10px rgba(0,0,0,.3);transition:all .3s ease}
-.color-tag:hover{transform:scale(1.05);border-color:white}
-.actions{display:flex;gap:20px;justify-content:center;margin-bottom:30px}
-.color-buttons{display:flex;gap:15px;justify-content:center;flex-wrap:wrap;margin-bottom:30px}
-.color-btn{padding:18px 30px;font-size:1.3rem;font-weight:bold;border:none;border-radius:12px;cursor:pointer;transition:all .3s ease;min-width:140px;box-shadow:0 5px 15px rgba(0,0,0,.3);border:3px solid transparent}
-.color-btn:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 8px 20px rgba(0,0,0,.4);border-color:white}
-.history-section{background:rgba(26,26,26,.8);border-radius:15px;padding:25px;max-height:400px;overflow-y:auto;border:2px solid #333}
-.history-row{display:flex;align-items:center;margin-bottom:12px;padding:12px;background:rgba(42,42,42,.9);border-radius:8px;border-left:4px solid #00ccff;transition:all .3s ease}
-.history-row:hover{transform:translateX(5px);background:rgba(50,50,50,.9)}
-.hint-text{margin-left:20px;font-size:1.2rem}
-.victory{color:#00ff00;font-weight:bold;text-shadow:0 0 10px #00ff00}
-.defeat{color:#ff4444;font-weight:bold;text-shadow:0 0 10px #ff4444}
-.penalty-warning{color:#ffaa00;font-size:.9rem;margin-top:5px}
+/* -- dizains paliek nemainīts -- */
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', sans-serif; background:linear-gradient(135deg,#0c0c0c 0%,#1a1a2e 50%,#16213e 100%); color:white; min-height:100vh; overflow-x:hidden; }
+.fullscreen { position:fixed; top:0; left:0; width:100vw; height:100vh; overflow-y:auto; }
+.container { max-width:1800px; margin:0 auto; padding:20px; }
+.header { text-align:center; margin-bottom:30px; position:relative; }
+.title { font-size:3rem; font-weight:bold; background:linear-gradient(45deg,#ff0000,#ff6b6b,#ff0000); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-shadow:0 0 20px rgba(255,0,0,0.5); margin-bottom:10px; }
+.subtitle { font-size:1.2rem; color:#ff6b6b; margin-bottom:20px; }
+.control-panel { position:fixed; top:20px; right:20px; display:flex; flex-direction:column; gap:10px; z-index:1000; }
+.control-btn { padding:12px 20px; font-size:1rem; font-weight:bold; border:none; border-radius:8px; cursor:pointer; transition:all 0.3s ease; background:#333; color:white; border:2px solid #555; }
+.control-btn:hover { transform:scale(1.05); background:#444; }
+.btn-connect { background:linear-gradient(45deg,#228B22,#32CD32); border-color:#00ff00; }
+.btn-disconnect { background:linear-gradient(45deg,#cc0000,#ff4444); border-color:#ff6666; }
+.btn-fullscreen { background:linear-gradient(45deg,#1a1a2e,#16213e); border-color:#00ccff; }
+.serial-status { padding:10px 15px; border-radius:5px; font-weight:bold; text-align:center; min-width:200px; }
+.serial-connected { background:rgba(34,139,34,0.2); color:#00ff00; border:2px solid #00ff00; }
+.serial-disconnected { background:rgba(204,0,0,0.2); color:#ff4444; border:2px solid #ff4444; }
+.columns { display:flex; gap:30px; margin-bottom:30px; }
+.hints-column { flex:1; min-width:450px; }
+.game-column { flex:2; min-width:700px; }
+.section-title { font-size:1.8rem; font-weight:bold; color:#00ccff; margin-bottom:15px; text-shadow:0 0 10px rgba(0,204,255,0.5); border-bottom:2px solid #00ccff; padding-bottom:5px; }
+.difficulty-badge { display:inline-block; padding:5px 15px; background:linear-gradient(45deg,#ff0000,#ff6b6b); color:white; border-radius:20px; font-weight:bold; margin-left:15px; font-size:1rem; }
+.hint-table { background:rgba(26,26,26,0.8); border-radius:15px; padding:20px; margin-bottom:20px; border:2px solid #333; backdrop-filter:blur(10px); }
+.hint-row { display:flex; align-items:center; margin-bottom:12px; padding:12px; background:rgba(42,42,42,0.9); border-radius:8px; border-left:4px solid #ff6b6b; transition:all 0.3s ease; }
+.hint-row:hover { transform:translateX(5px); border-left-color:#00ff00; }
+.color-dot { width:35px; height:35px; border-radius:50%; margin-right:10px; border:3px solid #444; display:inline-block; box-shadow:0 0 10px rgba(0,0,0,0.5); }
+.timer-section { text-align:center; margin-bottom:30px; background:rgba(26,26,26,0.8); border-radius:15px; padding:25px; border:2px solid #333; }
+.time-display { font-family:'Consolas', monospace; font-size:2.5rem; color:#ff4444; margin-bottom:20px; text-shadow:0 0 15px #ff4444; background:rgba(0,0,0,0.5); padding:15px; border-radius:10px; border:2px solid #ff4444; }
+.progress-bar { width:100%; height:25px; background:#333; border-radius:12px; overflow:hidden; margin-bottom:20px; border:2px solid #444; }
+.progress-fill { height:100%; background:linear-gradient(90deg,#ff0000,#ff6b6b,#ff0000); transition:width 1s linear; box-shadow:0 0 10px rgba(255,0,0,0.5); }
+.timer-controls { display:flex; gap:20px; justify-content:center; margin-bottom:25px; }
+.btn { padding:15px 30px; font-size:1.3rem; font-weight:bold; border:none; border-radius:10px; cursor:pointer; transition:all 0.3s ease; box-shadow:0 5px 15px rgba(0,0,0,0.3); }
+.btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.4); }
+.btn:active { transform:translateY(0); }
+.btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+.btn-start { background:linear-gradient(45deg,#228B22,#32CD32); color:white; }
+.btn-stop { background:linear-gradient(45deg,#cc0000,#ff4444); color:white; }
+.btn-delete { background:linear-gradient(45deg,#444,#666); color:white; }
+.btn-submit { background:linear-gradient(45deg,#228B22,#32CD32); color:white; }
+.current-input { text-align:center; margin-bottom:30px; padding:25px; background:rgba(26,26,26,0.8); border-radius:15px; border:2px solid #00ccff; }
+.current-input-text { font-size:1.5rem; color:white; min-height:50px; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:12px; padding:15px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid #444; }
+.color-tag { padding:10px 20px; border-radius:25px; font-weight:bold; border:2px solid transparent; box-shadow:0 3px 10px rgba(0,0,0,0.3); transition:all 0.3s ease; }
+.color-tag:hover { transform:scale(1.05); border-color:white; }
+.actions { display:flex; gap:20px; justify-content:center; margin-bottom:30px; }
+.color-buttons { display:flex; gap:15px; justify-content:center; flex-wrap:wrap; margin-bottom:30px; }
+.color-btn { padding:18px 30px; font-size:1.3rem; font-weight:bold; border:none; border-radius:12px; cursor:pointer; transition:all 0.3s ease; min-width:140px; box-shadow:0 5px 15px rgba(0,0,0,0.3); border:3px solid transparent; }
+.color-btn:hover { transform:translateY(-3px) scale(1.05); box-shadow:0 8px 20px rgba(0,0,0,0.4); border-color:white; }
+.color-btn:active { transform:translateY(0); }
+.history-section { background:rgba(26,26,26,0.8); border-radius:15px; padding:25px; max-height:400px; overflow-y:auto; border:2px solid #333; }
+.history-row { display:flex; align-items:center; margin-bottom:12px; padding:12px; background:rgba(42,42,42,0.9); border-radius:8px; border-left:4px solid #00ccff; transition:all 0.3s ease; }
+.history-row:hover { transform:translateX(5px); background:rgba(50,50,50,0.9); }
+.hint-text { margin-left:20px; font-size:1.2rem; }
+.victory { color:#00ff00; font-weight:bold; text-shadow:0 0 10px #00ff00; }
+.defeat { color:#ff4444; font-weight:bold; text-shadow:0 0 10px #ff4444; }
+.penalty-warning { color:#ffaa00; font-size:0.9rem; margin-top:5px; }
 @media(max-width:1200px){.columns{flex-direction:column}.hints-column,.game-column{min-width:auto}.control-panel{position:static;flex-direction:row;justify-content:center;margin-bottom:20px}}
-/* small debug box style */
-#debugLog{margin-top:12px;background:#0b0b0b;border:1px solid #333;padding:10px;height:120px;overflow:auto;font-size:0.9rem;color:#ddd}
 </style>
 </head>
 <body>
 <div class="fullscreen">
-  <div class="control-panel">
-    <button class="control-btn btn-connect" onclick="connectSerial()">🔌 CONNECT COM</button>
-    <button class="control-btn btn-disconnect" onclick="disconnectSerial()">🔴 DISCONNECT</button>
-    <button class="control-btn btn-fullscreen" onclick="toggleFullscreen()">⤢ FULLSCREEN</button>
-    <div id="serialStatus" class="serial-status serial-disconnected">COM: Nav savienots</div>
-  </div>
-
-  <div class="container">
-    <div class="header">
-      <h1 class="title">💣 BOMB PUZZLE MASTER</h1>
-      <div class="subtitle">GRŪTS REŽĪMS <span class="difficulty-badge">HARD</span></div>
-    </div>
-
-    <div class="columns">
-      <div class="hints-column">
-        <h2 class="section-title">Sākotnējie pavedieni: <span class="difficulty-badge">GRŪTI</span></h2>
-        <div class="hint-table" id="hintsContainer"></div>
-      </div>
-
-      <div class="game-column">
-        <div class="timer-section">
-          <div id="timeDisplay" class="time-display">07:00</div>
-          <div class="progress-bar"><div id="progressFill" class="progress-fill" style="width:100%"></div></div>
-          <div class="timer-controls">
-            <button class="btn btn-start" onclick="startTimer()">▶️ START</button>
-            <button class="btn btn-stop" onclick="stopTimer()">⏸️ STOP</button>
-          </div>
-          <div class="penalty-warning">⚠️ Katra nepareiza mēģinājuma sods: -30 sekundes!</div>
-        </div>
-
-        <div class="current-input">
-          <h3 class="section-title">Tava pašreizējā kombinācija:</h3>
-          <div id="currentInput" class="current-input-text">Izvēlies krāsas...</div>
-        </div>
-
-        <div class="actions">
-          <button class="btn btn-delete" onclick="deleteLast()">⬅️ DZĒST PEDĒJO</button>
-          <button class="btn btn-submit" onclick="submitGuess()">✅ IESNIEGT KODU</button>
-        </div>
-
-        <div id="colorButtons" class="color-buttons"></div>
-
-        <h3 class="section-title">Tavi mēģinājumi:</h3>
-        <div id="historyContainer" class="history-section"></div>
-
-        <div id="debugLog"></div>
-      </div>
-    </div>
-  </div>
+<div class="control-panel">
+<button class="control-btn btn-connect" onclick="connectSerial()">🔌 CONNECT COM</button>
+<button class="control-btn btn-disconnect" onclick="disconnectSerial()">🔴 DISCONNECT</button>
+<button class="control-btn btn-fullscreen" onclick="toggleFullscreen()">⤢ FULLSCREEN</button>
+<div class="serial-status serial-disconnected" id="serialStatus">COM: Nav savienots</div>
 </div>
-
+<div class="container">
+<div class="header">
+<h1 class="title">💣 BOMB PUZZLE MASTER</h1>
+<div class="subtitle">GRŪTS REŽĪMS <span class="difficulty-badge">HARD</span></div>
+</div>
+<div class="columns">
+<div class="hints-column">
+<h2 class="section-title">Sākotnējie pavedieni: <span class="difficulty-badge">GRŪTI</span></h2>
+<div class="hint-table" id="hintsContainer"></div>
+</div>
+<div class="game-column">
+<div class="timer-section">
+<div class="time-display" id="timeDisplay">05:00</div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="timer-controls">
+<button class="btn btn-start" onclick="startTimer()">▶️ START</button>
+<button class="btn btn-stop" onclick="stopTimer()">⏸️ STOP</button>
+</div>
+<div class="penalty-warning">⚠️ Katra nepareiza mēģinājuma sods: -30 sekundes!</div>
+</div>
+<div class="current-input">
+<h3 class="section-title">Tava pašreizējā kombinācija:</h3>
+<div class="current-input-text" id="currentInput">Izvēlies krāsas...</div>
+</div>
+<div class="actions">
+<button class="btn btn-delete" onclick="deleteLast()">⬅️ DZĒST PEDĒJO</button>
+<button class="btn btn-submit" onclick="submitGuess()">✅ IESNIEGT KODU</button>
+</div>
+<div class="color-buttons" id="colorButtons"></div>
+<h3 class="section-title">Tavi mēģinājumi:</h3>
+<div class="history-section" id="historyContainer"></div>
+</div>
+</div>
+</div>
+</div>
 <script>
-/* --- KONFIGURĀCIJA --- */
-const CODE_LENGTH = 5;
-const TOTAL_TIME = 420; // 7 minūtes
-const PENALTY = 30;
+const CODE_LENGTH=5; const TOTAL_TIME=300; const PENALTY=30;
+const COLORS={"BTN1":{name:"VIOLETS",color:"#8A2BE2",textColor:"white"},"BTN2":{name:"ZAĻŠ",color:"#2E8B57",textColor:"white"},"BTN3":{name:"BALTS",color:"#F8F8FF",textColor:"black"},"BTN4":{name:"MELNS",color:"#000000",textColor:"white"},"BTN5":{name:"PELĒKS",color:"#808080",textColor:"white"}};
+const ORDER=["BTN1","BTN2","BTN3","BTN4","BTN5"];
+let gameState={secret:[],current:[],timeLeft:TOTAL_TIME,timerRunning:false,gameOver:false,serialPort:null,reader:null,history:[]};
 
-/* tikai šīs 5 krāsas */
-const COLORS = {
-  BTN1: { name: "Violets", color: "#8A2BE2", text: "white" },
-  BTN2: { name: "Zaļš", color: "#2E8B57", text: "white" },
-  BTN3: { name: "Balts", color: "#F8F8FF", text: "black" },
-  BTN4: { name: "Melns", color: "#000000", text: "white" },
-  BTN5: { name: "Pelēks", color: "#808080", text: "white" }
-};
-const ORDER = ["BTN1","BTN2","BTN3","BTN4","BTN5"];
+document.addEventListener('DOMContentLoaded',function(){initializeGame();setupColorButtons();checkSerialSupport();});
 
-/* spēles stāvoklis */
-const gameState = {
-  secret: [],
-  current: [],
-  timeLeft: TOTAL_TIME,
-  timerRunning: false,
-  timerInterval: null,
-  gameOver: false,
-  serialPort: null,
-  reader: null,
-  readCancelController: null,
-  generatedHints: [],
-  history: []
-};
-
-/* debug helper */
-function dbg(msg) {
-  const el = document.getElementById('debugLog');
-  const t = new Date().toLocaleTimeString();
-  el.textContent += `[${t}] ${msg}\n`;
-  el.scrollTop = el.scrollHeight;
-  console.log(msg);
-}
-
-/* init */
-document.addEventListener('DOMContentLoaded', () => {
-  initializeGame();
-  setupColorButtons();
-  checkSerialSupport();
-});
-
-/* --- inicializācija --- */
-function initializeGame() {
-  gameState.secret = generateVeryHardSecret();
-  gameState.generatedHints = generateSuperHardHints();
-  renderHints();
-  updateTimerDisplay();
-  updateCurrentInput();
-  dbg('DEBUG: Slepenais kods (BTN ids): ' + JSON.stringify(gameState.secret));
-  dbg('DEBUG: Slepenais kods (names): ' + gameState.secret.map(c => COLORS[c].name).join(', '));
-}
-
-/* --- slepenais kods: grūts, modeļi ar nelielām modifikācijām --- */
-function generateVeryHardSecret() {
-  const patterns = [
-    ['BTN1','BTN1','BTN2','BTN2','BTN3'],
-    ['BTN4','BTN5','BTN4','BTN5','BTN4'],
-    ['BTN1','BTN3','BTN5','BTN3','BTN1'],
-    ['BTN2','BTN2','BTN4','BTN4','BTN1'],
-    ['BTN5','BTN3','BTN5','BTN2','BTN5']
-  ];
-  let pat = patterns[Math.floor(Math.random()*patterns.length)];
-  if (Math.random() < 0.6) {
-    let res = [...pat];
-    const changes = 1 + Math.floor(Math.random()*2); // 1-2 izmaiņas
-    for (let i=0;i<changes;i++){
-      res[Math.floor(Math.random()*CODE_LENGTH)] = ORDER[Math.floor(Math.random()*ORDER.length)];
-    }
-    return res;
-  }
-  return [...pat];
-}
-
-/* --- ļoti grūti / maldinoši hinti --- */
-function generateSuperHardHints() {
-  const hints = [];
-  // 4 maldinoši, 1 swapped, 1 almost-correct
-  // Maldinošie: dziļi izmainītas kombinācijas
-  for (let i=0;i<4;i++){
-    let guess = [...gameState.secret];
-    const changes = 3 + Math.floor(Math.random()*2); // 3-4 izmaiņas
-    for (let j=0;j<changes;j++){
-      guess[Math.floor(Math.random()*CODE_LENGTH)] = ORDER[Math.floor(Math.random()*ORDER.length)];
-    }
-    let res = evaluateGuess(guess, true);
-    // samazinām noderību
-    res.correctPos = Math.min(res.correctPos, 1);
-    res.wrongPlace = Math.min(res.wrongPlace, 2);
-    hints.push({ guess, result: res, type: 'very_wrong' });
-  }
-  // swapped: same colors redistributed
-  for (let i=0;i<1;i++){
-    let guess = shuffleArray([...gameState.secret]);
-    const swaps = 1 + Math.floor(Math.random()*2);
-    for (let s=0;s<swaps;s++){
-      let a=Math.floor(Math.random()*CODE_LENGTH), b=Math.floor(Math.random()*CODE_LENGTH);
-      [guess[a], guess[b]] = [guess[b], guess[a]];
-    }
-    let res = evaluateGuess(guess, true);
-    res.correctPos = Math.min(res.correctPos, 2);
-    res.wrongPlace = Math.min(res.wrongPlace, 3);
-    hints.push({ guess, result: res, type: 'swapped' });
-  }
-  // almost correct: change one
-  {
-    let guess = [...gameState.secret];
-    const pos = Math.floor(Math.random()*CODE_LENGTH);
-    let newCol;
-    do { newCol = ORDER[Math.floor(Math.random()*ORDER.length)]; } while (newCol === guess[pos]);
-    guess[pos] = newCol;
-    let r = evaluateGuess(guess, true);
-    r.correctPos = Math.min(r.correctPos, 3);
-    r.wrongPlace = Math.min(r.wrongPlace, 2);
-    hints.push({ guess, result: r, type: 'almost_correct' });
-  }
-  return shuffleArray(hints);
-}
-
-/* --- evaluate guess (same logic kā Python) --- */
-function evaluateGuess(guess, preview=false) {
-  const secretCopy = [...gameState.secret];
-  const guessCopy = [...guess];
-  let correctPos = 0, wrongPlace = 0;
-  for (let i=CODE_LENGTH-1;i>=0;i--){
-    if (guessCopy[i] === secretCopy[i]){
-      correctPos++;
-      guessCopy.splice(i,1);
-      secretCopy.splice(i,1);
-    }
-  }
-  for (const g of guessCopy) {
-    const idx = secretCopy.indexOf(g);
-    if (idx !== -1) {
-      wrongPlace++;
-      secretCopy.splice(idx,1);
-    }
-  }
-  if (!preview && gameState.timerRunning && !gameState.gameOver) {
-    gameState.timeLeft = Math.max(0, gameState.timeLeft - PENALTY);
-    updateTimerDisplay();
-  }
-  return { correctPos, wrongPlace };
-}
-
-/* --- SERIAL (Web Serial) --- */
-async function connectSerial() {
-  try {
-    if (!('serial' in navigator)) {
-      alert('Web Serial API nav atbalstīta šajā pārlūkprogrammā. Lieto Edge/Chrome/Opera.');
-      return;
-    }
-    // requestPort ļauj lietotājam izvēlēties portu (COM7)
-    gameState.serialPort = await navigator.serial.requestPort();
-    await gameState.serialPort.open({ baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none' });
-    updateSerialStatus(true);
-    dbg('Serial: savienots');
-    startSerialReading();
-  } catch (err) {
-    dbg('Serial connect error: ' + (err.message || err));
-    updateSerialStatus(false, err.message || 'error');
-  }
-}
-
-async function disconnectSerial() {
-  try {
-    if (gameState.reader) {
-      try { await gameState.reader.cancel(); } catch(e){}
-      gameState.reader = null;
-    }
-    if (gameState.serialPort) {
-      try { await gameState.serialPort.close(); } catch(e){}
-      gameState.serialPort = null;
-    }
-    updateSerialStatus(false, 'Atvienots');
-    dbg('Serial: atvienots');
-  } catch (err) {
-    dbg('Serial disconnect error: ' + err);
-  }
-}
-
-function updateSerialStatus(connected, msg='') {
-  const el = document.getElementById('serialStatus');
-  if (connected) {
-    el.textContent = 'COM: Savienots ✓';
-    el.className = 'serial-status serial-connected';
-  } else {
-    el.textContent = 'COM: Nav savienots' + (msg ? ' - ' + msg : '');
-    el.className = 'serial-status serial-disconnected';
-  }
-}
-
-/* robusts lasīšanas cikls: izmanto TextDecoderStream ja iespējams, bet fallback uz reader */
-async function startSerialReading() {
-  if (!gameState.serialPort) return;
-  // release previous reader if any
-  if (gameState.reader) {
-    try { await gameState.reader.cancel(); } catch(e){}
-    gameState.reader = null;
-  }
-  try {
-    // izmanto TextDecoderStream + pipeTo, bet arī nodrošina atdalīšanu pa rindām
-    const textDecoder = new TextDecoderStream();
-    const readableStreamClosed = gameState.serialPort.readable.pipeTo(textDecoder.writable);
-    const readerStream = textDecoder.readable.getReader();
-    gameState.reader = readerStream;
-    let buffer = '';
-    while (true) {
-      const { value, done } = await readerStream.read();
-      if (done) break;
-      if (value !== undefined && value !== null) {
-        buffer += value;
-        // sadalām pa rindiņām (kad saņem \n)
-        let parts = buffer.split(/\r?\n/);
-        // pēdējais fragments paliek bufferī (var būt nepilnīgs)
-        buffer = parts.pop();
-        for (const p of parts) {
-          const line = p.trim();
-          if (!line) continue;
-          processSerialLine(line);
-        }
-      }
-    }
-  } catch (err) {
-    dbg('Serial read error: ' + err);
-    updateSerialStatus(false, 'Reading error');
-  } finally {
-    if (gameState.reader) {
-      try { await gameState.reader.releaseLock(); } catch(e) {}
-      gameState.reader = null;
-    }
-  }
-}
-
-/* apstrādā vienu serial līniju; pieņem "BTN1".."BTN5" vai "1".."5" */
-function processSerialLine(raw) {
-  const text = raw.trim().toUpperCase();
-  dbg('RX: ' + text);
-  if (text.startsWith('BTN') && ORDER.includes(text.substring(0,4))) {
-    addInput(text.substring(0,4));
-  } else if (/^[1-5]$/.test(text)) {
-    addInput('BTN'+text);
-  } else {
-    // ja Arduino sūta kaut ko citu (piem., "OK"), to parādām debugā
-    dbg('Neapstrādāts serial: ' + text);
-  }
-}
-
-function checkSerialSupport() {
-  if (!('serial' in navigator)) {
-    dbg('Brīdinājums: Web Serial API nav pieejams šajā pārlūkprogrammā.');
-  } else {
-    dbg('Web Serial API pieejams.');
-  }
-}
-
-/* --- UI: krāsu pogas un renderings --- */
-function setupColorButtons(){
-  const cont = document.getElementById('colorButtons');
-  cont.innerHTML = '';
-  for (const id of ORDER) {
-    const c = COLORS[id];
-    const btn = document.createElement('button');
-    btn.className = 'color-btn';
-    btn.textContent = c.name;
-    btn.style.background = `linear-gradient(45deg, ${c.color}, ${adjustColor(c.color, 18)})`;
-    btn.style.color = c.text;
-    btn.onclick = () => addInput(id);
-    cont.appendChild(btn);
-  }
-}
-
-function adjustColor(hex, percent) {
-  try {
-    const h = hex.replace('#','');
-    const num = parseInt(h,16);
-    let r = (num >> 16) + Math.round(255*(percent/100));
-    let g = ((num >> 8)&0xff) + Math.round(255*(percent/100));
-    let b = (num & 0xff) + Math.round(255*(percent/100));
-    r = Math.min(255,Math.max(0,r)); g = Math.min(255,Math.max(0,g)); b = Math.min(255,Math.max(0,b));
-    return '#' + r.toString(16).padStart(2,'0') + g.toString(16).padStart(2,'0') + b.toString(16).padStart(2,'0');
-  } catch(e) { return hex; }
-}
-
-function renderHints(){
-  const container = document.getElementById('hintsContainer');
-  container.innerHTML = '';
-  for (const h of gameState.generatedHints){
-    const row = document.createElement('div'); row.className = 'hint-row';
-    if (h.type === 'almost_correct') row.style.borderLeftColor = '#ffaa00';
-    else if (h.type === 'very_wrong') row.style.borderLeftColor = '#ff4444';
-    else row.style.borderLeftColor = '#00ccff';
-    for (const gid of h.guess){
-      const dot = document.createElement('span'); dot.className = 'color-dot';
-      dot.style.backgroundColor = COLORS[gid].color;
-      // nerādām nosaukumu pie dot — tā hinti grūtāki
-      row.appendChild(dot);
-    }
-    const text = document.createElement('span'); text.className = 'hint-text';
-    let icon = h.type === 'almost_correct' ? '🔸 ' : h.type === 'very_wrong' ? '❌ ' : '🔄 ';
-    text.textContent = icon + obfuscateHintText(makeHintText(h.result));
-    row.appendChild(text);
-    container.appendChild(row);
-  }
-}
-
-/* pārvērš hintu tekstu mazāk tiešu */
-function obfuscateHintText(text) {
-  // vienkāršs, drošs obfuscator: aizvieto skaidrus skaitļu apgalvojumus ar aptuveniem
-  return text.replace(/(\d+)\s*viet/i, (m,p1) => `${p1} (apt.) vietā`)
-             .replace(/(\d+)\s*citur/i, (m,p1) => `~${p1} citur`)
-             .replace('Nekas nav pareizs','Nekas acīmredzami nav pareizs');
-}
-
-function makeHintText(res) {
-  const c = res.correctPos, w = res.wrongPlace;
-  if (c===0 && w===0) return '💀 Nekas nav pareizs';
-  if (c===1 && w===0) return '❶ 1 pareizs vietā';
-  if (c>1 && w===0) return `🟢 ${c} pareizi vietā`;
-  if (c===0 && w===1) return '🟡 1 pareizs, bet citā vietā';
-  if (c===0 && w>1) return `🟡 ${w} pareizi, bet citās vietās`;
-  return `🔵 ${c} vietā, ${w} citur`;
-}
-
-/* --- current input update --- */
-function updateCurrentInput(){
-  const cont = document.getElementById('currentInput');
-  cont.innerHTML = '';
-  if (gameState.current.length === 0) {
-    cont.textContent = 'Izvēlies krāsas...';
-    return;
-  }
-  for (const cid of gameState.current){
-    const tag = document.createElement('span'); tag.className = 'color-tag';
-    tag.textContent = COLORS[cid].name;
-    tag.style.background = `linear-gradient(45deg, ${COLORS[cid].color}, ${adjustColor(COLORS[cid].color,18)})`;
-    tag.style.color = COLORS[cid].text;
-    cont.appendChild(tag);
-  }
-  const submitBtn = document.querySelector('.btn-submit');
-  if (submitBtn) submitBtn.disabled = gameState.current.length !== CODE_LENGTH;
-}
-
-/* --- history --- */
-function addToHistory(guess, hintData, result){
-  const hist = document.getElementById('historyContainer');
-  const row = document.createElement('div'); row.className = 'history-row';
-  for (const gid of guess){
-    const dot = document.createElement('span'); dot.className = 'color-dot';
-    dot.style.backgroundColor = COLORS[gid].color;
-    row.appendChild(dot);
-  }
-  const t = document.createElement('span'); t.className = 'hint-text';
-  if (result === 'win') { t.textContent = '🎉 UZVARA! Kods atminēts!'; t.classList.add('victory'); }
-  else if (result === 'lose') { t.textContent = '💣 ZAUDĒJUMS!'; t.classList.add('defeat'); }
-  else {
-    t.textContent = makeHintText(hintData) + ` (-${PENALTY}s)`;
-  }
-  row.appendChild(t);
-  hist.appendChild(row);
-  hist.scrollTop = hist.scrollHeight;
-  gameState.history.push({guess, hintData, result});
-}
-
-/* --- add/delete/submit --- */
-function addInput(btnId){
-  if (gameState.gameOver || gameState.current.length >= CODE_LENGTH) return;
-  gameState.current.push(btnId);
-  updateCurrentInput();
-}
-function deleteLast(){
-  if (gameState.current.length > 0) {
-    gameState.current.pop();
-    updateCurrentInput();
-  }
-}
-function submitGuess(){
-  if (gameState.current.length < CODE_LENGTH){
-    alert('❌ Nepilns kods! Ievadi visas 5 krāsas!');
-    return;
-  }
-  const guess = [...gameState.current];
-  gameState.current = [];
-  updateCurrentInput();
-  if (guess.join() === gameState.secret.join()){
-    endGame(true, guess);
-    return;
-  }
-  if (gameState.timeLeft <= 0) { endGame(false, guess); return; }
-  const hintData = evaluateGuess(guess);
-  addToHistory(guess, hintData, 'try');
-}
-
-/* --- timer --- */
-function updateTimerDisplay(){
-  const min = Math.floor(gameState.timeLeft/60).toString().padStart(2,'0');
-  const sec = (gameState.timeLeft%60).toString().padStart(2,'0');
-  document.getElementById('timeDisplay').textContent = `${min}:${sec}`;
-  const pct = (gameState.timeLeft / TOTAL_TIME) * 100;
-  document.getElementById('progressFill').style.width = `${pct}%`;
-  if (pct < 20) document.getElementById('progressFill').style.background = 'linear-gradient(90deg,#ff0000,#ff4444)';
-  else if (pct < 50) document.getElementById('progressFill').style.background = 'linear-gradient(90deg,#ff6b6b,#ffaa00)';
-  else document.getElementById('progressFill').style.background = 'linear-gradient(90deg,#ff0000,#ff6b6b,#ff0000)';
-}
-
-function startTimer(){
-  if (!gameState.timerRunning && !gameState.gameOver) {
-    gameState.timerRunning = true;
-    if (!gameState.timerInterval) gameState.timerInterval = setInterval(tick,1000);
-    dbg('Timer started');
-  }
-}
-function stopTimer(){
-  gameState.timerRunning = false;
-  if (gameState.timerInterval) { clearInterval(gameState.timerInterval); gameState.timerInterval = null; }
-  dbg('Timer stopped');
-}
-function tick(){
-  if (gameState.timerRunning && !gameState.gameOver){
-    gameState.timeLeft--;
-    if (gameState.timeLeft < 0) gameState.timeLeft = 0;
-    updateTimerDisplay();
-    if (gameState.timeLeft <= 0) endGame(false);
-  }
-}
-
-/* --- end game --- */
-function endGame(victory, guess=null){
-  gameState.gameOver = true;
-  stopTimer();
-  if (guess) addToHistory(guess, null, victory ? 'win' : 'lose');
-  setTimeout(() => {
-    if (victory) {
-      alert('🎉 APSVEICAM! Tu atminēji ļoti grūto kodu!');
-      window.open('https://youtube.com','_blank');
-    } else {
-      alert('💣 ZAUDĒJI! Mēģini vēlreiz!');
-      window.open('https://ss.com','_blank');
-    }
-  }, 800);
-}
-
-/* --- utilities --- */
-function shuffleArray(a){const arr=[...a];for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr}
-
-/* --- fullscreen --- */
-function toggleFullscreen(){ if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>dbg('FS error:'+e)); else document.exitFullscreen(); }
-document.addEventListener('keydown', e => { if (e.key==='Escape' && document.fullscreenElement) document.exitFullscreen(); });
-
-/* --- serial helper exposure --- */
-window.connectSerial = connectSerial;
-window.disconnectSerial = disconnectSerial;
-window.startTimer = startTimer;
-window.stopTimer = stopTimer;
-window.addInput = addInput;
-window.deleteLast = deleteLast;
-window.submitGuess = submitGuess;
-window.toggleFullscreen = toggleFullscreen;
-window.evaluateGuess = evaluateGuess;
-window.gameState = gameState;
-
-/* --- start up helpers: check serial, setup buttons --- */
-function checkSerialSupport(){
-  if (!('serial' in navigator)) dbg('Brīdinājums: Web Serial API nav pieejams šajā pārlūkprogrammā. Izmanto Edge/Chrome/Opera.');
-  else dbg('Web Serial API pieejams.');
-}
-
-/* --- expose UI rendering on load --- */
-function renderAll(){
-  setupColorButtons();
-  renderHints();
-  updateTimerDisplay();
-  updateCurrentInput();
-}
-
-/* nodrošina, ka spēle sākas tagad */
-renderAll();
+function initializeGame(){gameState.secret=generateSecret(); renderHints(); updateTimerDisplay(); updateCurrentInput();}
+function generateSecret(){let secret=[];for(let i=0;i<CODE_LENGTH;i++){secret.push(ORDER[Math.floor(Math.random()*ORDER.length)]);} return secret;}
+function renderHints(){const container=document.getElementById('hintsContainer'); container.innerHTML=''; gameState.secret.forEach(colorId=>{const row=document.createElement('div'); row.className='hint-row'; const dot=document.createElement('span'); dot.className='color-dot'; dot.style.backgroundColor=COLORS[colorId].color; row.appendChild(dot); const hintText=document.createElement('span'); hintText.className='hint-text'; hintText.textContent='?'; row.appendChild(hintText); container.appendChild(row); });}
+function setupColorButtons(){const container=document.getElementById('colorButtons'); container.innerHTML=''; ORDER.forEach(btnId=>{const color=COLORS[btnId]; const button=document.createElement('button'); button.className='color-btn'; button.textContent=color.name; button.style.background=color.color; button.style.color=color.textColor; button.onclick=()=>addInput(btnId); container.appendChild(button);});}
+function addInput(btnId){if(gameState.gameOver||gameState.current.length>=CODE_LENGTH) return; gameState.current.push(btnId); updateCurrentInput();}
+function deleteLast(){if(gameState.current.length>0){gameState.current.pop(); updateCurrentInput();}}
+function updateCurrentInput(){const container=document.getElementById('currentInput'); container.innerHTML=''; if(gameState.current.length===0){container.textContent='Izvēlies krāsas...'; return;} gameState.current.forEach(colorId=>{const color=COLORS[colorId]; const tag=document.createElement('span'); tag.className='color-tag'; tag.textContent=color.name; tag.style.background=color.color; tag.style.color=color.textColor; container.appendChild(tag);}); const submitBtn=document.querySelector('.btn-submit'); submitBtn.disabled=gameState.current.length!==CODE_LENGTH;}
+function evaluateGuess(guess){const secretCopy=[...gameState.secret]; const guessCopy=[...guess]; let correctPos=0, wrongPlace=0; for(let i=CODE_LENGTH-1;i>=0;i--){if(guessCopy[i]===secretCopy[i]){correctPos++; guessCopy.splice(i,1); secretCopy.splice(i,1);}} for(let g of guessCopy){const index=secretCopy.indexOf(g); if(index!==-1){wrongPlace++; secretCopy.splice(index,1);}} return {correctPos, wrongPlace};}
+function submitGuess(){if(gameState.current.length<CODE_LENGTH){alert('❌ Nepilns kods!'); return;} const guess=[...gameState.current]; gameState.current=[]; updateCurrentInput(); if(guess.join()===gameState.secret.join()){endGame(true,guess); return;} if(gameState.timeLeft<=0){endGame(false,guess); return;} const hintData=evaluateGuess(guess); addToHistory(guess,hintData,'try');}
+function addToHistory(guess,hintData,result){const historyContainer=document.getElementById('historyContainer'); const row=document.createElement('div'); row.className='history-row'; guess.forEach(colorId=>{const dot=document.createElement('span'); dot.className='color-dot'; dot.style.backgroundColor=COLORS[colorId].color; row.appendChild(dot);}); const resultText=document.createElement('span'); resultText.className='hint-text'; if(result==='win'){resultText.textContent='🎉 UZVARA!'; resultText.className+=' victory';} else if(result==='lose'){resultText.textContent='💣 ZAUDĒJUMS!'; resultText.className+=' defeat';} else{resultText.textContent=`🔵 ${hintData.correctPos} vietā, ${hintData.wrongPlace} citur (-${PENALTY}s)`;} row.appendChild(resultText); historyContainer.appendChild(row); historyContainer.scrollTop=historyContainer.scrollHeight; gameState.history.push({guess,hintData,result});}
+function startTimer(){if(!gameState.timerRunning&&!gameState.gameOver){gameState.timerRunning=true; gameState.timerInterval=setInterval(tick,1000);}}
+function stopTimer(){gameState.timerRunning=false; if(gameState.timerInterval){clearInterval(gameState.timerInterval);}}
+function tick(){if(gameState.timerRunning&&!gameState.gameOver){gameState.timeLeft--; updateTimerDisplay(); if(gameState.timeLeft<=0){gameState.timeLeft=0; endGame(false);}}}
+function updateTimerDisplay(){const minutes=Math.floor(gameState.timeLeft/60); const seconds=gameState.timeLeft%60; document.getElementById('timeDisplay').textContent=`${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`; const progressPercent=(gameState.timeLeft/TOTAL_TIME)*100; document.getElementById('progressFill').style.width=`${progressPercent}%`; if(progressPercent<20){document.getElementById('progressFill').style.background='linear-gradient(90deg,#ff0000,#ff4444)';} else if(progressPercent<50){document.getElementById('progressFill').style.background='linear-gradient(90deg,#ff6b6b,#ffaa00)';}}
+function endGame(victory,guess=null){gameState.gameOver=true; stopTimer(); if(guess){addToHistory(guess,null,victory?'win':'lose');} setTimeout(()=>{if(victory){alert('🎉 APSVEICAM! Tu atminēji kodu!'); window.open('https://youtube.com','_blank');} else{alert('💣 ZAUDĒJI!'); window.open('https://ss.com','_blank');}},1000);}
+async function connectSerial(){try{if(!('serial' in navigator)){throw new Error('Web Serial API nav atbalstīta');} gameState.serialPort=await navigator.serial.requestPort(); await gameState.serialPort.open({baudRate:9600,dataBits:8,stopBits:1,parity:'none'}); updateSerialStatus(true); startSerialReading();}catch(error){console.error(error); updateSerialStatus(false,error.message); alert('Kļūda savienojoties ar COM portu: '+error.message);}}
+async function disconnectSerial(){try{if(gameState.reader){await gameState.reader.cancel(); gameState.reader=null;} if(gameState.serialPort){await gameState.serialPort.close(); gameState.serialPort=null;} updateSerialStatus(false,'Atvienots manuāli');}catch(error){console.error(error);}}
+async function startSerialReading(){try{const decoder=new TextDecoder(); gameState.reader=gameState.serialPort.readable.getReader(); while(true){const {value,done}=await gameState.reader.read(); if(done){gameState.reader.releaseLock(); break;} const text=decoder.decode(value).trim().toUpperCase(); processSerialInput(text);}}catch(error){console.error(error); updateSerialStatus(false,'Reading error');}}
+function processSerialInput(text){if(text.startsWith("BTN")&&ORDER.includes(text.substring(0,4))){addInput(text.substring(0,4));} else if(/^[1-5]$/.test(text)){addInput(`BTN${text}`);}}
+function updateSerialStatus(connected,message=''){const statusElement=document.getElementById('serialStatus'); if(connected){statusElement.textContent='COM: Savienots ✓'; statusElement.className='serial-status serial-connected';} else{statusElement.textContent=`COM: Nav savienots ${message?' - '+message:''}`; statusElement.className='serial-status serial-disconnected';}}
+function checkSerialSupport(){if(!('serial' in navigator)){alert('⚠️ Web Serial API nav atbalstīta. Lūdzu izmantojiet Chrome, Edge vai Opera.');}}
+function toggleFullscreen(){if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(err=>{console.error(err);});} else{document.exitFullscreen();}}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document.fullscreenElement){document.exitFullscreen();}}});
+window.connectSerial=connectSerial; window.disconnectSerial=disconnectSerial; window.startTimer=startTimer; window.stopTimer=stopTimer; window.addInput=addInput; window.deleteLast=deleteLast; window.submitGuess=submitGuess; window.toggleFullscreen=toggleFullscreen;
 </script>
 </body>
 </html>
