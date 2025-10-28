@@ -103,11 +103,30 @@
             color: #888;
             margin-top: 5px;
         }
+        
+        .filter-info {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Serial Signālu Uztvērējs</h1>
+        
+        <div class="warning">
+            <strong>Piezīme:</strong> Pēc pieslēgšanās pagaidiet 1-2 sekundes, līdz ieslēdzas aizsardzība pret mākslīgajiem signāliem.
+        </div>
         
         <div class="controls">
             <button id="connectBtn">Pieslēgties</button>
@@ -119,6 +138,10 @@
             Nav pieslēgts
         </div>
         
+        <div class="filter-info">
+            Aizsardzība pret mākslīgajiem signāliem: <span id="filterStatus">Neaktīva</span>
+        </div>
+        
         <div class="signal-display">
             <h3>Saņemtie signāli:</h3>
             <div id="signalLog"></div>
@@ -128,12 +151,17 @@
     <script>
         let port = null;
         let reader = null;
-        let dataBuffer = ''; // Buferis daļējiem signāliem
+        let dataBuffer = '';
+        let isConnectionStable = false; // Aizsardzības karantīna
+        let connectionStartTime = 0;
+        const CONNECTION_STABILIZATION_TIME = 2000; // 2 sekundes
+        
         const connectBtn = document.getElementById('connectBtn');
         const disconnectBtn = document.getElementById('disconnectBtn');
         const clearBtn = document.getElementById('clearBtn');
         const statusDiv = document.getElementById('status');
         const signalLog = document.getElementById('signalLog');
+        const filterStatus = document.getElementById('filterStatus');
         
         // Pārbauda vai pārlūks atbalsta Web Serial API
         if (!('serial' in navigator)) {
@@ -150,8 +178,14 @@
                 // Atver portu ar iestatījumiem
                 await port.open({ baudRate: 9600 });
                 
+                // Iestata aizsardzības režīmu
+                isConnectionStable = false;
+                connectionStartTime = Date.now();
+                filterStatus.textContent = 'Aktīva (2s)';
+                filterStatus.style.color = '#dc3545';
+                
                 // Atjaunina statusu
-                statusDiv.textContent = 'Pieslēgts';
+                statusDiv.textContent = 'Pieslēgts (karantīnas režīms)';
                 statusDiv.className = 'status connected';
                 connectBtn.disabled = true;
                 disconnectBtn.disabled = false;
@@ -161,6 +195,15 @@
                 
                 // Sāk lasīt datus
                 readSerialData();
+                
+                // Pēc 2 sekundēm atslēdz aizsardzību
+                setTimeout(() => {
+                    isConnectionStable = true;
+                    filterStatus.textContent = 'Neaktīva';
+                    filterStatus.style.color = '#28a745';
+                    statusDiv.textContent = 'Pieslēgts';
+                    console.log('Aizsardzība pret mākslīgajiem signāliem atslēgta');
+                }, CONNECTION_STABILIZATION_TIME);
                 
             } catch (error) {
                 console.error('Kļūda pieslēgšanās laikā:', error);
@@ -184,6 +227,8 @@
                 statusDiv.className = 'status disconnected';
                 connectBtn.disabled = false;
                 disconnectBtn.disabled = true;
+                filterStatus.textContent = 'Neaktīva';
+                filterStatus.style.color = '#888';
                 
             } catch (error) {
                 console.error('Kļūda atvienošanās laikā:', error);
@@ -245,15 +290,22 @@
                     processCompleteLine(line);
                 }
             });
-            
-            // Parāda bufera statusu (opcionāli)
-            if (dataBuffer.length > 0) {
-                console.log(`Buferī: "${dataBuffer}" (${dataBuffer.length} baiti)`);
-            }
         }
         
         // Pilnas rindas apstrāde
         function processCompleteLine(line) {
+            // Aizsardzība pret mākslīgajiem signāliem
+            if (!isConnectionStable) {
+                const timeSinceConnection = Date.now() - connectionStartTime;
+                const timeLeft = CONNECTION_STABILIZATION_TIME - timeSinceConnection;
+                
+                console.log(`Ignorēts signāls karantīnā: "${line}" (atlicis ${Math.max(0, timeLeft)}ms)`);
+                
+                // Parāda informāciju par ignorēto signālu
+                displayIgnoredSignal(line, timeLeft);
+                return;
+            }
+            
             // Pārbauda vai rinda satur vienu no pogu signāliem
             const buttonSignals = ['btn1', 'btn2', 'btn3', 'btn4', 'btn5'];
             const foundSignal = buttonSignals.find(signal => 
@@ -265,6 +317,29 @@
             } else if (line.length > 0) {
                 // Parāda arī citus signālus
                 displaySignal('cits', line);
+            }
+        }
+        
+        // Ignorēto signālu attēlošana (pelēkā krāsā)
+        function displayIgnoredSignal(rawData, timeLeft) {
+            const timestamp = new Date().toLocaleTimeString();
+            const signalItem = document.createElement('div');
+            signalItem.className = 'signal-item';
+            signalItem.style.opacity = '0.6';
+            signalItem.style.borderLeftColor = '#6c757d';
+            
+            signalItem.innerHTML = `
+                <div class="signal-time">${timestamp} (IGNORĒTS karantīnā)</div>
+                <div class="signal-data">🚫 ${rawData}</div>
+                <div class="buffer-info">Aizsardzība beigsies pēc ${Math.max(0, timeLeft)}ms</div>
+            `;
+            
+            signalLog.prepend(signalItem);
+            
+            // Ierobežo logu līdz 100 ierakstiem
+            const items = signalLog.getElementsByClassName('signal-item');
+            if (items.length > 100) {
+                signalLog.removeChild(items[items.length - 1]);
             }
         }
         
