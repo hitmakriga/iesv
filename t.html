@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serial Signālu Uztvērējs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        button {
+            background-color: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #005a87;
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .signal-display {
+            margin-top: 20px;
+        }
+        
+        .signal-item {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007cba;
+            border-radius: 4px;
+        }
+        
+        .signal-time {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .signal-data {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .clear-btn {
+            background-color: #dc3545;
+        }
+        
+        .clear-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Serial Signālu Uztvērējs</h1>
+        
+        <div class="controls">
+            <button id="connectBtn">Pieslēgties</button>
+            <button id="disconnectBtn" disabled>Atvienoties</button>
+            <button id="clearBtn" class="clear-btn">Notīrīt logu</button>
+        </div>
+        
+        <div id="status" class="status disconnected">
+            Nav pieslēgts
+        </div>
+        
+        <div class="signal-display">
+            <h3>Saņemtie signāli:</h3>
+            <div id="signalLog"></div>
+        </div>
+    </div>
+
+    <script>
+        let port = null;
+        let reader = null;
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusDiv = document.getElementById('status');
+        const signalLog = document.getElementById('signalLog');
+        
+        // Pārbauda vai pārlūks atbalsta Web Serial API
+        if (!('serial' in navigator)) {
+            alert('Web Serial API nav atbalstīta šajā pārlūkprogrammā. Lūdzu, izmantojiet Chrome vai Edge.');
+            connectBtn.disabled = true;
+        }
+        
+        // Pieslēgšanās funkcija
+        connectBtn.addEventListener('click', async () => {
+            try {
+                // Pieprasa serial portu
+                port = await navigator.serial.requestPort();
+                
+                // Atver portu ar iestatījumiem
+                await port.open({ baudRate: 9600 });
+                
+                // Atjaunina statusu
+                statusDiv.textContent = 'Pieslēgts';
+                statusDiv.className = 'status connected';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                
+                // Sāk lasīt datus
+                readSerialData();
+                
+            } catch (error) {
+                console.error('Kļūda pieslēgšanās laikā:', error);
+                statusDiv.textContent = 'Kļūda pieslēgšanās laikā: ' + error.message;
+                statusDiv.className = 'status disconnected';
+            }
+        });
+        
+        // Atvienošanās funkcija
+        disconnectBtn.addEventListener('click', async () => {
+            try {
+                if (reader) {
+                    await reader.cancel();
+                }
+                if (port) {
+                    await port.close();
+                }
+                
+                // Atjaunina statusu
+                statusDiv.textContent = 'Nav pieslēgts';
+                statusDiv.className = 'status disconnected';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                
+            } catch (error) {
+                console.error('Kļūda atvienošanās laikā:', error);
+            }
+        });
+        
+        // Notīrīšanas funkcija
+        clearBtn.addEventListener('click', () => {
+            signalLog.innerHTML = '';
+        });
+        
+        // Datu lasīšanas funkcija
+        async function readSerialData() {
+            try {
+                const textDecoder = new TextDecoder();
+                
+                while (port && port.readable) {
+                    reader = port.readable.getReader();
+                    
+                    try {
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            
+                            if (done) {
+                                break;
+                            }
+                            
+                            if (value) {
+                                const text = textDecoder.decode(value);
+                                processReceivedData(text);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Kļūda lasot datus:', error);
+                    } finally {
+                        reader.releaseLock();
+                    }
+                }
+            } catch (error) {
+                console.error('Kļūda datu lasīšanas procesā:', error);
+            }
+        }
+        
+        // Datu apstrādes funkcija
+        function processReceivedData(data) {
+            // Sadala datus pa rindām
+            const lines = data.split('\n');
+            
+            lines.forEach(line => {
+                line = line.trim();
+                if (line) {
+                    // Pārbauda vai rinda satur vienu no pogu signāliem
+                    const buttonSignals = ['btn1', 'btn2', 'btn3', 'btn4', 'btn5'];
+                    const foundSignal = buttonSignals.find(signal => 
+                        line.toLowerCase().includes(signal.toLowerCase())
+                    );
+                    
+                    if (foundSignal) {
+                        displaySignal(foundSignal, line);
+                    } else if (line.length > 0) {
+                        // Parāda arī citus signālus, ja vēlas
+                        displaySignal('cits', line);
+                    }
+                }
+            });
+        }
+        
+        // Signāla attēlošanas funkcija
+        function displaySignal(signalType, rawData) {
+            const timestamp = new Date().toLocaleTimeString();
+            const signalItem = document.createElement('div');
+            signalItem.className = 'signal-item';
+            
+            let displayText = '';
+            let signalColor = '#007cba';
+            
+            switch(signalType) {
+                case 'btn1':
+                    displayText = '🟢 Poga 1 nospiesta';
+                    signalColor = '#28a745';
+                    break;
+                case 'btn2':
+                    displayText = '🔵 Poga 2 nospiesta';
+                    signalColor = '#007bff';
+                    break;
+                case 'btn3':
+                    displayText = '🟡 Poga 3 nospiesta';
+                    signalColor = '#ffc107';
+                    break;
+                case 'btn4':
+                    displayText = '🟠 Poga 4 nospiesta';
+                    signalColor = '#fd7e14';
+                    break;
+                case 'btn5':
+                    displayText = '🔴 Poga 5 nospiesta';
+                    signalColor = '#dc3545';
+                    break;
+                default:
+                    displayText = `📟 Cits signāls: ${rawData}`;
+                    signalColor = '#6c757d';
+            }
+            
+            signalItem.style.borderLeftColor = signalColor;
+            signalItem.innerHTML = `
+                <div class="signal-time">${timestamp}</div>
+                <div class="signal-data">${displayText}</div>
+                ${signalType === 'cits' ? '' : `<div style="font-size: 12px; color: #666;">Izejas dati: ${rawData}</div>`}
+            `;
+            
+            signalLog.prepend(signalItem);
+            
+            // Ierobežo logu līdz 100 ierakstiem
+            const items = signalLog.getElementsByClassName('signal-item');
+            if (items.length > 100) {
+                signalLog.removeChild(items[items.length - 1]);
+            }
+        }
+        
+        // Automātiski aizver portu, kad lapa tiek aizvērta
+        window.addEventListener('beforeunload', async () => {
+            if (port) {
+                await port.close();
+            }
+        });
+    </script>
+</body>
+</html>
