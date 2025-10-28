@@ -22,13 +22,15 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0c0c0c
 .serial-connected{background:rgba(34,139,34,0.2);color:#00ff00;border:2px solid #00ff00}
 .serial-disconnected{background:rgba(204,0,0,0.2);color:#ff4444;border:2px solid #ff4444}
 .columns{display:flex;gap:30px;margin-bottom:30px}
-.hints-column{flex:1;min-width:450px}
+.hints-column{flex:1;min-width:450px;position:relative}
 .game-column{flex:2;min-width:700px}
 .section-title{font-size:1.8rem;font-weight:bold;color:#00ccff;margin-bottom:15px;text-shadow:0 0 10px rgba(0,204,255,0.5);border-bottom:2px solid #00ccff;padding-bottom:5px}
 .difficulty-badge{display:inline-block;padding:5px 15px;background:linear-gradient(45deg,#ff0000,#ff6b6b);color:white;border-radius:20px;font-weight:bold;margin-left:15px;font-size:1rem}
 .hint-table{background:rgba(26,26,26,0.8);border-radius:15px;padding:20px;margin-bottom:20px;border:2px solid #333;backdrop-filter:blur(10px)}
 .hint-row{display:flex;align-items:center;margin-bottom:12px;padding:12px;background:rgba(42,42,42,0.9);border-radius:8px;border-left:4px solid #ff6b6b;transition:all .3s ease}
 .color-dot{width:35px;height:35px;border-radius:50%;margin-right:10px;border:3px solid #444;display:inline-block;box-shadow:0 0 10px rgba(0,0,0,0.5)}
+.show-answer-btn{position:absolute;bottom:15px;right:15px;padding:10px 15px;font-weight:bold;background:linear-gradient(45deg,#228B22,#32CD32);border:none;border-radius:8px;cursor:pointer;transition:all .3s ease;color:white}
+.show-answer-btn:hover{transform:scale(1.05)}
 .time-display{font-family:'Consolas',monospace;font-size:2.5rem;color:#ff4444;margin-bottom:20px;text-shadow:0 0 15px #ff4444;background:rgba(0,0,0,0.5);padding:15px;border-radius:10px;border:2px solid #ff4444}
 .progress-bar{width:100%;height:25px;background:#333;border-radius:12px;overflow:hidden;margin-bottom:20px;border:2px solid #444}
 .progress-fill{height:100%;background:linear-gradient(90deg,#ff0000,#ff6b6b,#ff0000);transition:width 1s linear;box-shadow:0 0 10px rgba(255,0,0,0.5)}
@@ -67,11 +69,12 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0c0c0c
 <div class="hints-column">
 <h2 class="section-title">Sākotnējie pavedieni: <span class="difficulty-badge">GRŪTI</span></h2>
 <div class="hint-table" id="hintsContainer"></div>
+<button class="show-answer-btn" onclick="showAnswer()">Parādīt atbildi</button>
 </div>
 
 <div class="game-column">
 <div class="timer-section">
-<div class="time-display" id="timeDisplay">07:00</div>
+<div class="time-display" id="timeDisplay">05:00</div>
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 <div class="timer-controls">
 <button class="btn btn-start" onclick="startTimer()">▶️ START</button>
@@ -99,252 +102,82 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0c0c0c
 </div>
 
 <script>
-const CODE_LENGTH=5, TOTAL_TIME=420, PENALTY=30;
-const COLORS={
-    "BTN1":{name:"VIOLETS",color:"#8A2BE2",textColor:"white"},
-    "BTN2":{name:"ZAĻŠ",color:"#2E8B57",textColor:"white"},
-    "BTN3":{name:"BALTS",color:"#F8F8FF",textColor:"black"},
-    "BTN4":{name:"MELNS",color:"#000000",textColor:"white"},
-    "BTN5":{name:"PELĒKS",color:"#808080",textColor:"white"}
-};
+const CODE_LENGTH=5, TOTAL_TIME=300, PENALTY=30;
+const COLORS={"BTN1":{name:"VIOLETS",color:"#8A2BE2",textColor:"white"},"BTN2":{name:"ZAĻŠ",color:"#2E8B57",textColor:"white"},"BTN3":{name:"BALTS",color:"#F8F8FF",textColor:"black"},"BTN4":{name:"MELNS",color:"#000000",textColor:"white"},"BTN5":{name:"PELĒKS",color:"#808080",textColor:"white"}};
 const ORDER=["BTN1","BTN2","BTN3","BTN4","BTN5"];
-let gameState={secret:[],current:[],timeLeft:TOTAL_TIME,timerRunning:false,gameOver:false,serialPort:null,reader:null,history:[]};
+let gameState={secret:[],current:[],timeLeft:TOTAL_TIME,timerRunning:false,gameOver:false,serialPort:null,reader:null,history:[],preHints:[]};
 
 document.addEventListener('DOMContentLoaded',()=>{
-    initializeGame();
+    generateSecretAndHints();
     setupColorButtons();
     checkSerialSupport();
-});
-
-function initializeGame(){
-    gameState.secret = generateSecret();
-    renderHints();
     updateTimerDisplay();
     updateCurrentInput();
+});
+
+// Pregenerate secret and hints
+function generateSecretAndHints(){
+    gameState.secret=Array.from({length:CODE_LENGTH},()=>ORDER[Math.floor(Math.random()*ORDER.length)]);
+    gameState.preHints=[];
+    for(let i=0;i<5;i++){
+        const hint=Array.from({length:CODE_LENGTH},()=>ORDER[Math.floor(Math.random()*ORDER.length)]);
+        gameState.preHints.push(hint);
+    }
+    renderPreHints();
 }
 
-function generateSecret(){
-    return Array.from({length:CODE_LENGTH},()=>ORDER[Math.floor(Math.random()*ORDER.length)]);
+function renderPreHints(){
+    const c=document.getElementById('hintsContainer'); c.innerHTML='';
+    gameState.preHints.forEach(hint=>{
+        const r=document.createElement('div'); r.className='hint-row';
+        hint.forEach(id=>{
+            const dot=document.createElement('span');
+            dot.className='color-dot'; dot.style.backgroundColor=COLORS[id].color;
+            r.appendChild(dot);
+        });
+        const txt=document.createElement('span'); txt.className='hint-text'; txt.textContent='❓ ? vietā / ? citur';
+        r.appendChild(txt); c.appendChild(r);
+    });
 }
 
+function showAnswer(){
+    alert('Slepenais kods: ' + gameState.secret.map(id=>COLORS[id].name).join(' - '));
+}
+
+// Color buttons
 function setupColorButtons(){
-    const c=document.getElementById('colorButtons');
-    c.innerHTML='';
+    const c=document.getElementById('colorButtons'); c.innerHTML='';
     ORDER.forEach(id=>{
-        const col=COLORS[id];
-        const b=document.createElement('button');
-        b.className='color-btn';
-        b.textContent=col.name;
-        b.style.background=col.color;
-        b.style.color=col.textColor;
-        b.onclick=()=>addInput(id);
+        const col=COLORS[id]; const b=document.createElement('button');
+        b.className='color-btn'; b.textContent=col.name; b.style.background=col.color; b.style.color=col.textColor; b.onclick=()=>addInput(id);
         c.appendChild(b);
     });
 }
 
-function addInput(id){
-    if(gameState.gameOver || gameState.current.length >= CODE_LENGTH) return;
-    gameState.current.push(id);
-    updateCurrentInput();
-}
+// Current input
+function addInput(id){if(gameState.gameOver||gameState.current.length>=CODE_LENGTH)return; gameState.current.push(id); updateCurrentInput();}
+function deleteLast(){gameState.current.pop(); updateCurrentInput();}
+function updateCurrentInput(){const c=document.getElementById('currentInput'); c.innerHTML=''; if(!gameState.current.length){c.textContent='Izvēlies krāsas...'; return;} gameState.current.forEach(id=>{const t=document.createElement('span'); t.className='color-tag'; t.textContent=COLORS[id].name; t.style.background=COLORS[id].color; t.style.color=COLORS[id].textColor; c.appendChild(t);}); document.querySelector('.btn-submit').disabled=gameState.current.length!==CODE_LENGTH;}
 
-function deleteLast(){
-    gameState.current.pop();
-    updateCurrentInput();
-}
+// Timer and history (var būt bez izmaiņām)
+function evaluateGuess(g){const s=[...gameState.secret],x=[...g];let p=0,w=0;for(let i=CODE_LENGTH-1;i>=0;i--){if(x[i]===s[i]){p++;x.splice(i,1);s.splice(i,1);}}for(let g1 of x){const i=s.indexOf(g1);if(i!==-1){w++;s.splice(i,1);}}return{correctPos:p,wrongPlace:w};}
+function submitGuess(){if(gameState.current.length<CODE_LENGTH){alert('❌ Nepilns kods!');return;} const g=[...gameState.current]; gameState.current=[]; updateCurrentInput(); if(g.join()===gameState.secret.join()){endGame(true,g); return;} const hint=evaluateGuess(g); addToHistory(g,hint,'try'); gameState.timeLeft=Math.max(0,gameState.timeLeft-PENALTY); updateTimerDisplay(); if(gameState.timeLeft<=0) endGame(false);}
+function addToHistory(g,h,r){if(r==='try') gameState.history.push({guess:g,hint:h}); const c=document.getElementById('historyContainer'); const row=document.createElement('div'); row.className='history-row'; g.forEach(id=>{const d=document.createElement('span'); d.className='color-dot'; d.style.backgroundColor=COLORS[id].color; row.appendChild(d);}); const t=document.createElement('span'); t.className='hint-text'; if(r==='win') t.textContent='🎉 UZVARA!'; else if(r==='lose') t.textContent='💣 ZAUDĒJUMS!'; else t.textContent=`🔵 ${h.correctPos} vietā, ${h.wrongPlace} citur (-${PENALTY}s)`; row.appendChild(t); c.appendChild(row); c.scrollTop=c.scrollHeight;}
+function startTimer(){if(!gameState.timerRunning&&!gameState.gameOver){gameState.timerRunning=true; gameState.timerInterval=setInterval(tick,1000);}}
+function stopTimer(){gameState.timerRunning=false; if(gameState.timerInterval) clearInterval(gameState.timerInterval);}
+function tick(){if(gameState.timerRunning&&!gameState.gameOver){gameState.timeLeft--; updateTimerDisplay(); if(gameState.timeLeft<=0) endGame(false);}}
+function updateTimerDisplay(){const m=Math.floor(gameState.timeLeft/60),s=gameState.timeLeft%60; document.getElementById('timeDisplay').textContent=`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; document.getElementById('progressFill').style.width=`${(gameState.timeLeft/TOTAL_TIME)*100}%`;}
+function endGame(v,g){gameState.gameOver=true; stopTimer(); if(g) addToHistory(g,null,v?'win':'lose'); setTimeout(()=>alert(v?'🎉 Tu uzvarēji!':'💣 Zaudēji!'),500);}
 
-function updateCurrentInput(){
-    const c=document.getElementById('currentInput');
-    c.innerHTML='';
-    if(!gameState.current.length){c.textContent='Izvēlies krāsas...';return;}
-    gameState.current.forEach(id=>{
-        const col=COLORS[id];
-        const t=document.createElement('span');
-        t.className='color-tag';
-        t.textContent=col.name;
-        t.style.background=col.color;
-        t.style.color=col.textColor;
-        c.appendChild(t);
-    });
-    document.querySelector('.btn-submit').disabled = gameState.current.length !== CODE_LENGTH;
-}
-
-function evaluateGuess(g){
-    const s=[...gameState.secret], x=[...g];
-    let p=0,w=0;
-    for(let i=CODE_LENGTH-1;i>=0;i--){
-        if(x[i]===s[i]){p++;x.splice(i,1);s.splice(i,1);}
-    }
-    for(let g1 of x){
-        const i=s.indexOf(g1);
-        if(i!==-1){w++;s.splice(i,1);}
-    }
-    return {correctPos:p, wrongPlace:w};
-}
-
-function submitGuess(){
-    if(gameState.current.length < CODE_LENGTH){alert('❌ Nepilns kods!');return;}
-    const g=[...gameState.current];
-    gameState.current=[];
-    updateCurrentInput();
-    if(g.join()===gameState.secret.join()){endGame(true,g);return;}
-    const hint=evaluateGuess(g);
-    addToHistory(g,hint,'try');
-    gameState.timeLeft=Math.max(0,gameState.timeLeft-PENALTY);
-    updateTimerDisplay();
-    if(gameState.timeLeft <= 0) endGame(false);
-}
-
-function renderHints(){
-    const c=document.getElementById('hintsContainer');
-    c.innerHTML='';
-    gameState.history.forEach((entry)=>{
-        const r=document.createElement('div');
-        r.className='hint-row';
-        entry.guess.forEach((id)=>{
-            const dot=document.createElement('span');
-            dot.className='color-dot';
-            dot.style.backgroundColor = COLORS[id].color;
-            r.appendChild(dot);
-        });
-        const txt=document.createElement('span');
-        txt.className='hint-text';
-        txt.textContent=`✔ ${entry.hint.correctPos} vietā, ↻ ${entry.hint.wrongPlace} citur`;
-        r.appendChild(txt);
-        c.appendChild(r);
-    });
-    // piepilda līdz 5 hintiem, ja mazāk
-    for(let i=gameState.history.length;i<5;i++){
-        const r=document.createElement('div');
-        r.className='hint-row';
-        for(let j=0;j<CODE_LENGTH;j++){
-            const dot=document.createElement('span');
-            dot.className='color-dot';
-            dot.style.backgroundColor='#444';
-            r.appendChild(dot);
-        }
-        const txt=document.createElement('span');
-        txt.className='hint-text';
-        txt.textContent='❓ ? vietā / ? citur';
-        r.appendChild(txt);
-        c.appendChild(r);
-    }
-}
-
-function addToHistory(g,h,r){
-    if(r==='try') gameState.history.push({guess:g,hint:h});
-    renderHints();
-    const c=document.getElementById('historyContainer');
-    const row=document.createElement('div');
-    row.className='history-row';
-    g.forEach(id=>{
-        const d=document.createElement('span');
-        d.className='color-dot';
-        d.style.backgroundColor=COLORS[id].color;
-        row.appendChild(d);
-    });
-    const t=document.createElement('span');
-    t.className='hint-text';
-    if(r==='win') t.textContent='🎉 UZVARA!';
-    else if(r==='lose') t.textContent='💣 ZAUDĒJUMS!';
-    else t.textContent=`🔵 ${h.correctPos} vietā, ${h.wrongPlace} citur (-${PENALTY}s)`;
-    row.appendChild(t);
-    c.appendChild(row);
-    c.scrollTop=c.scrollHeight;
-}
-
-function startTimer(){
-    if(!gameState.timerRunning && !gameState.gameOver){
-        gameState.timerRunning=true;
-        gameState.timerInterval=setInterval(tick,1000);
-    }
-}
-
-function stopTimer(){
-    gameState.timerRunning=false;
-    if(gameState.timerInterval) clearInterval(gameState.timerInterval);
-}
-
-function tick(){
-    if(gameState.timerRunning && !gameState.gameOver){
-        gameState.timeLeft--;
-        updateTimerDisplay();
-        if(gameState.timeLeft <=0) endGame(false);
-    }
-}
-
-function updateTimerDisplay(){
-    const m=Math.floor(gameState.timeLeft/60), s=gameState.timeLeft%60;
-    document.getElementById('timeDisplay').textContent=`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-    document.getElementById('progressFill').style.width=`${(gameState.timeLeft/TOTAL_TIME)*100}%`;
-}
-
-function endGame(v,g){
-    gameState.gameOver=true;
-    stopTimer();
-    if(g) addToHistory(g,null,v?'win':'lose');
-    setTimeout(()=>alert(v?'🎉 Tu uzvarēji!':'💣 Zaudēji!'),500);
-}
-
-/* ======= Web Serial API ======= */
-let dataBuffer='',isStable=false,startTime=0;
-const STABILIZE_TIME=2000;
-
-async function connectSerial(){
-    try{
-        if(!('serial'in navigator)) throw new Error('Web Serial API nav atbalstīta');
-        gameState.serialPort=await navigator.serial.requestPort();
-        await gameState.serialPort.open({baudRate:9600});
-        updateSerialStatus(true);
-        isStable=false; startTime=Date.now();
-        setTimeout(()=>{isStable=true;},STABILIZE_TIME);
-        readSerialData();
-    }catch(e){updateSerialStatus(false,e.message);alert('Savienojuma kļūda: '+e.message);}
-}
-
-async function readSerialData(){
-    const dec=new TextDecoder();
-    while(gameState.serialPort && gameState.serialPort.readable){
-        const reader=gameState.serialPort.readable.getReader();
-        try{
-            while(true){
-                const {value,done}=await reader.read();
-                if(done) break;
-                if(value){dataBuffer+=dec.decode(value);const lines=dataBuffer.split('\n');dataBuffer=lines.pop()||'';lines.forEach(l=>handleLine(l.trim()));}
-            }
-        }finally{reader.releaseLock();}
-    }
-}
-
-function handleLine(line){
-    if(!line) return;
-    if(!isStable) return;
-    const match=line.match(/BTN[1-5]/i);
-    if(match){addInput(match[0].toUpperCase());}
-}
-
-async function disconnectSerial(){
-    try{
-        if(gameState.reader) await gameState.reader.cancel();
-        if(gameState.serialPort) await gameState.serialPort.close();
-        updateSerialStatus(false);
-    }catch(e){console.error(e);}
-}
-
-function updateSerialStatus(c,msg=''){
-    const el=document.getElementById('serialStatus');
-    if(c){el.textContent='COM: Savienots ✓'; el.className='serial-status serial-connected';}
-    else{el.textContent='COM: Nav savienots'+(msg?' - '+msg:''); el.className='serial-status serial-disconnected';}
-}
-
-function checkSerialSupport(){
-    if(!('serial'in navigator)) alert('⚠️ Web Serial API nav atbalstīta. Izmanto Chrome, Edge vai Opera.');
-}
-
-function toggleFullscreen(){
-    if(!document.fullscreenElement) document.documentElement.requestFullscreen();
-    else document.exitFullscreen();
-}
+// Web Serial API
+let dataBuffer='',isStable=false,startTime=0; const STABILIZE_TIME=2000;
+async function connectSerial(){try{if(!('serial'in navigator)) throw new Error('Web Serial API nav atbalstīta'); gameState.serialPort=await navigator.serial.requestPort(); await gameState.serialPort.open({baudRate:9600}); updateSerialStatus(true); isStable=false; startTime=Date.now(); setTimeout(()=>{isStable=true;},STABILIZE_TIME); readSerialData();}catch(e){updateSerialStatus(false,e.message); alert('Savienojuma kļūda: '+e.message);}}
+async function readSerialData(){const dec=new TextDecoder(); while(gameState.serialPort&&gameState.serialPort.readable){const reader=gameState.serialPort.readable.getReader(); try{while(true){const {value,done}=await reader.read(); if(done) break; if(value){dataBuffer+=dec.decode(value); const lines=dataBuffer.split('\n'); dataBuffer=lines.pop()||''; lines.forEach(l=>handleLine(l.trim()));}}}finally{reader.releaseLock();}}}
+function handleLine(line){if(!line) return; if(!isStable) return; const match=line.match(/BTN[1-5]/i); if(match){addInput(match[0].toUpperCase());}}
+async function disconnectSerial(){try{if(gameState.reader) await gameState.reader.cancel(); if(gameState.serialPort) await gameState.serialPort.close(); updateSerialStatus(false);}catch(e){console.error(e);}}
+function updateSerialStatus(c,msg=''){const el=document.getElementById('serialStatus'); if(c){el.textContent='COM: Savienots ✓'; el.className='serial-status serial-connected';} else{el.textContent='COM: Nav savienots'+(msg?' - '+msg:''); el.className='serial-status serial-disconnected';}}
+function checkSerialSupport(){if(!('serial'in navigator)) alert('⚠️ Web Serial API nav atbalstīta.');}
+function toggleFullscreen(){if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();}
 </script>
 </body>
 </html>
