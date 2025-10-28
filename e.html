@@ -115,27 +115,26 @@ document.addEventListener('DOMContentLoaded',()=>{
     updateCurrentInput();
 });
 
-// Pregenerate secret and hints
+// Pregenerate secret and hints with explanatory comments
 function generateSecretAndHints(){
     gameState.secret=Array.from({length:CODE_LENGTH},()=>ORDER[Math.floor(Math.random()*ORDER.length)]);
     gameState.preHints=[];
     for(let i=0;i<5;i++){
         const hint=Array.from({length:CODE_LENGTH},()=>ORDER[Math.floor(Math.random()*ORDER.length)]);
-        gameState.preHints.push(hint);
+        const hintEval=evaluateGuess(hint);
+        gameState.preHints.push({guess:hint,comment:`${hintEval.correctPos} pareizs, ${hintEval.wrongPlace} citur`});
     }
     renderPreHints();
 }
 
 function renderPreHints(){
     const c=document.getElementById('hintsContainer'); c.innerHTML='';
-    gameState.preHints.forEach(hint=>{
+    gameState.preHints.forEach(h=>{
         const r=document.createElement('div'); r.className='hint-row';
-        hint.forEach(id=>{
-            const dot=document.createElement('span');
-            dot.className='color-dot'; dot.style.backgroundColor=COLORS[id].color;
-            r.appendChild(dot);
+        h.guess.forEach(id=>{
+            const dot=document.createElement('span'); dot.className='color-dot'; dot.style.backgroundColor=COLORS[id].color; r.appendChild(dot);
         });
-        const txt=document.createElement('span'); txt.className='hint-text'; txt.textContent='❓ ? vietā / ? citur';
+        const txt=document.createElement('span'); txt.className='hint-text'; txt.textContent=h.comment;
         r.appendChild(txt); c.appendChild(r);
     });
 }
@@ -159,7 +158,7 @@ function addInput(id){if(gameState.gameOver||gameState.current.length>=CODE_LENG
 function deleteLast(){gameState.current.pop(); updateCurrentInput();}
 function updateCurrentInput(){const c=document.getElementById('currentInput'); c.innerHTML=''; if(!gameState.current.length){c.textContent='Izvēlies krāsas...'; return;} gameState.current.forEach(id=>{const t=document.createElement('span'); t.className='color-tag'; t.textContent=COLORS[id].name; t.style.background=COLORS[id].color; t.style.color=COLORS[id].textColor; c.appendChild(t);}); document.querySelector('.btn-submit').disabled=gameState.current.length!==CODE_LENGTH;}
 
-// Timer and history (var būt bez izmaiņām)
+// Timer and history
 function evaluateGuess(g){const s=[...gameState.secret],x=[...g];let p=0,w=0;for(let i=CODE_LENGTH-1;i>=0;i--){if(x[i]===s[i]){p++;x.splice(i,1);s.splice(i,1);}}for(let g1 of x){const i=s.indexOf(g1);if(i!==-1){w++;s.splice(i,1);}}return{correctPos:p,wrongPlace:w};}
 function submitGuess(){if(gameState.current.length<CODE_LENGTH){alert('❌ Nepilns kods!');return;} const g=[...gameState.current]; gameState.current=[]; updateCurrentInput(); if(g.join()===gameState.secret.join()){endGame(true,g); return;} const hint=evaluateGuess(g); addToHistory(g,hint,'try'); gameState.timeLeft=Math.max(0,gameState.timeLeft-PENALTY); updateTimerDisplay(); if(gameState.timeLeft<=0) endGame(false);}
 function addToHistory(g,h,r){if(r==='try') gameState.history.push({guess:g,hint:h}); const c=document.getElementById('historyContainer'); const row=document.createElement('div'); row.className='history-row'; g.forEach(id=>{const d=document.createElement('span'); d.className='color-dot'; d.style.backgroundColor=COLORS[id].color; row.appendChild(d);}); const t=document.createElement('span'); t.className='hint-text'; if(r==='win') t.textContent='🎉 UZVARA!'; else if(r==='lose') t.textContent='💣 ZAUDĒJUMS!'; else t.textContent=`🔵 ${h.correctPos} vietā, ${h.wrongPlace} citur (-${PENALTY}s)`; row.appendChild(t); c.appendChild(row); c.scrollTop=c.scrollHeight;}
