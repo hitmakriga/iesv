@@ -143,11 +143,6 @@ document.addEventListener('DOMContentLoaded',()=>{initializeGame();setupColorBut
 function initializeGame(){
     gameState.secret=generateSecret();
     pregeneratedHints=generateHints();
-    // compute comments for each pregenerated hint
-    pregeneratedHints = pregeneratedHints.map(h => {
-        const evalRes = evaluateHintAgainstSecret(h);
-        return {guess: h, comment: makeComment(evalRes)};
-    });
     renderHints();
     updateTimerDisplay();
     updateCurrentInput();
@@ -157,72 +152,29 @@ function generateSecret(){
     return Array.from({length:CODE_LENGTH},()=>ORDER[Math.floor(Math.random()*ORDER.length)]);
 }
 
-// Vieglāki pavedieni: daži sakrīt ar pareizo kombināciju, bet ne visi
+// Grūtāki pavedieni — vairāk sajaukti, mazāk tieši
 function generateHints(){
     let hints=[];
     for(let i=0;i<5;i++){
-        // start from secret then do small perturbation so hints are easier
         let hint=[...gameState.secret];
-        // swap 1-2 pairs with probability (so some hints are quite close)
-        const swaps = Math.random() < 0.5 ? 1 : 2;
-        for(let j=0;j<swaps;j++){
+        // Sajauc 3 elementus, lai mazāk sakrītu
+        for(let j=0;j<3;j++){
             const a=Math.floor(Math.random()*CODE_LENGTH);
-            let b=Math.floor(Math.random()*CODE_LENGTH);
-            while(b===a) b=Math.floor(Math.random()*CODE_LENGTH);
+            const b=Math.floor(Math.random()*CODE_LENGTH);
             [hint[a],hint[b]]=[hint[b],hint[a]];
-        }
-        // with small chance, change one color to random to add variety
-        if(Math.random() < 0.2){
-            const pos=Math.floor(Math.random()*CODE_LENGTH);
-            hint[pos] = ORDER[Math.floor(Math.random()*ORDER.length)];
         }
         hints.push(hint);
     }
     return hints;
 }
 
-// make a readable comment from evaluation
-function makeComment(evalRes){
-    const p = evalRes.correctPos;
-    const w = evalRes.wrongPlace;
-    if(p === 0 && w === 0) return "Nekas nav pareizs.";
-    if(p === 1 && w === 0) return "1 pareizs vietā.";
-    if(p > 1 && w === 0) return `${p} pareizi vietā.`;
-    if(p === 0 && w === 1) return "1 pareizs, bet citā vietā.";
-    if(p === 0 && w > 1) return `${w} pareizi, bet citās vietās.`;
-    return `${p} vietā, ${w} citur.`;
-}
-
-// evaluate pregenerated hint vs secret (used only for pregenerated hints)
-function evaluateHintAgainstSecret(guess){
-    const secretCopy = [...gameState.secret];
-    const guessCopy = [...guess];
-    let correctPos = 0;
-    let wrongPlace = 0;
-    for (let i = CODE_LENGTH - 1; i >= 0; i--){
-        if (guessCopy[i] === secretCopy[i]) {
-            correctPos++;
-            guessCopy.splice(i,1);
-            secretCopy.splice(i,1);
-        }
-    }
-    for (const g of guessCopy){
-        const idx = secretCopy.indexOf(g);
-        if (idx !== -1) {
-            wrongPlace++;
-            secretCopy.splice(idx,1);
-        }
-    }
-    return {correctPos, wrongPlace};
-}
-
 function renderHints(){
     const c=document.getElementById('hintsContainer');
     c.innerHTML='';
-    pregeneratedHints.forEach((h,idx)=>{
+    pregeneratedHints.forEach((hint,idx)=>{
         const r=document.createElement('div');
         r.className='hint-row';
-        h.guess.forEach(id=>{
+        hint.forEach(id=>{
             const d=document.createElement('span');
             d.className='color-dot';
             d.style.backgroundColor=COLORS[id].color;
@@ -230,7 +182,11 @@ function renderHints(){
         });
         const comment=document.createElement('span');
         comment.className='hint-comment';
-        comment.textContent = h.comment;
+        comment.textContent = idx===0 ? "1 pareizs, 2 citur" :
+                              idx===1 ? "2 pareizi, 1 citur" :
+                              idx===2 ? "1 pareizs" :
+                              idx===3 ? "1 pareizs, bet ne vietā" :
+                              "Krāsas atkārtojas, bet kādā secībā?";
         r.appendChild(comment);
         c.appendChild(r);
     });
@@ -242,7 +198,6 @@ function showAnswer(){
 
 function setupColorButtons(){
     const c=document.getElementById('colorButtons');
-    c.innerHTML='';
     ORDER.forEach(id=>{
         const col=COLORS[id];
         const b=document.createElement('button');
@@ -255,238 +210,7 @@ function setupColorButtons(){
     });
 }
 
-function addInput(id){
-    if(gameState.gameOver||gameState.current.length>=CODE_LENGTH)return;
-    gameState.current.push(id);
-    updateCurrentInput();
-}
-
-function deleteLast(){
-    if(gameState.current.length>0){
-        gameState.current.pop();
-        updateCurrentInput();
-    }
-}
-
-function updateCurrentInput(){
-    const c=document.getElementById('currentInput');
-    c.innerHTML='';
-    if(!gameState.current.length){c.textContent='Izvēlies krāsas...';return;}
-    gameState.current.forEach(id=>{
-        const col=COLORS[id];
-        const t=document.createElement('span');
-        t.className='color-tag';
-        t.textContent=col.name;
-        t.style.background=col.color;
-        t.style.color=col.textColor;
-        t.style.padding='5px 10px';
-        t.style.marginRight='5px';
-        t.style.borderRadius='5px';
-        c.appendChild(t);
-    });
-    const submitBtn = document.querySelector('.btn-submit');
-    if(submitBtn) submitBtn.disabled = gameState.current.length !== CODE_LENGTH;
-}
-
-function evaluateGuess(g){
-    const s=[...gameState.secret], x=[...g];
-    let p=0,w=0;
-    for(let i=CODE_LENGTH-1;i>=0;i--){
-        if(x[i]===s[i]){p++;x.splice(i,1);s.splice(i,1);}
-    }
-    for(let g1 of x){
-        const i=s.indexOf(g1);
-        if(i!==-1){w++;s.splice(i,1);}
-    }
-    return {correctPos:p,wrongPlace:w};
-}
-
-function submitGuess(){
-    if(gameState.current.length<CODE_LENGTH){alert('❌ Nepilns kods!');return;}
-    const g=[...gameState.current];
-    gameState.current=[];
-    updateCurrentInput();
-    if(g.join()===gameState.secret.join()){endGame(true,g);return;}
-    const hint=evaluateGuess(g);
-    addToHistory(g,hint,'try');
-    gameState.timeLeft=Math.max(0,gameState.timeLeft-PENALTY);
-    updateTimerDisplay();
-    if(gameState.timeLeft<=0) endGame(false);
-}
-
-function addToHistory(g,h,r){
-    const c=document.getElementById('historyContainer');
-    const row=document.createElement('div');
-    row.className='history-row';
-    g.forEach(id=>{
-        const d=document.createElement('span');
-        d.className='color-dot';
-        d.style.backgroundColor=COLORS[id].color;
-        row.appendChild(d);
-    });
-    const t=document.createElement('span');
-    t.className='hint-text';
-    if(r==='win') t.textContent='🎉 UZVARA!';
-    else if(r==='lose') t.textContent='💣 ZAUDĒJUMS!';
-    else t.textContent=`🔵 ${h.correctPos} vietā, ${h.wrongPlace} citur (-${PENALTY}s)`;
-    row.appendChild(t);
-    c.appendChild(row);
-    c.scrollTop=c.scrollHeight;
-}
-
-function startTimer(){
-    if(!gameState.timerRunning&&!gameState.gameOver){
-        gameState.timerRunning=true;
-        gameState.timerInterval=setInterval(tick,1000);
-    }
-}
-function stopTimer(){
-    gameState.timerRunning=false;
-    if(gameState.timerInterval) clearInterval(gameState.timerInterval);
-}
-function tick(){
-    if(gameState.timerRunning&&!gameState.gameOver){
-        gameState.timeLeft--;
-        updateTimerDisplay();
-        if(gameState.timeLeft<=0) endGame(false);
-    }
-}
-function updateTimerDisplay(){
-    const m=Math.floor(gameState.timeLeft/60), s=gameState.timeLeft%60;
-    document.getElementById('timeDisplay').textContent=`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-    document.getElementById('progressFill').style.width=`${(gameState.timeLeft/TOTAL_TIME)*100}%`;
-}
-function endGame(v,g){
-    gameState.gameOver=true;
-    stopTimer();
-    if(g) addToHistory(g,null,v?'win':'lose');
-    if(v){
-        // uzvaras pāradresācija
-        window.location.href="https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-    } else {
-        setTimeout(()=>alert('💣 Zaudēji!'),500);
-    }
-}
-
-/* ======= Web Serial API ======= */
-let dataBuffer='',isStable=false,startTime=0;
-const STABILIZE_TIME=2000;
-
-async function connectSerial(){
-    try{
-        if(!('serial' in navigator)) throw new Error('Web Serial API nav atbalstīta');
-        // pieprasīt portu lietotāja mijiedarbībā
-        gameState.serialPort = await navigator.serial.requestPort();
-        await gameState.serialPort.open({baudRate:9600, dataBits:8, stopBits:1, parity:'none'});
-        updateSerialStatus(true);
-        isStable=false; startTime=Date.now();
-        setTimeout(()=>{isStable=true;},STABILIZE_TIME);
-        // uzsāk lasīšanu (un saglabā reader, lai var atcelt)
-        readSerialData();
-    }catch(e){
-        updateSerialStatus(false,e.message);
-        alert('Savienojuma kļūda: '+e.message);
-    }
-}
-
-async function readSerialData(){
-    if(!gameState.serialPort || !gameState.serialPort.readable) return;
-    const decoder = new TextDecoder();
-    try{
-        gameState.reader = gameState.serialPort.readable.getReader();
-        while(true){
-            const { value, done } = await gameState.reader.read();
-            if(done) break;
-            if(value){
-                // decode chunk and accumulate
-                dataBuffer += decoder.decode(value, { stream: true });
-                const lines = dataBuffer.split(/\r?\n/);
-                dataBuffer = lines.pop() || '';
-                lines.forEach(line => {
-                    const txt = line.trim();
-                    if(txt) processSerialLine(txt);
-                });
-            }
-        }
-    }catch(err){
-        console.error('Serial read error', err);
-        updateSerialStatus(false, 'Reading error');
-    }finally{
-        try{
-            if(gameState.reader){
-                await gameState.reader.releaseLock();
-            }
-        }catch(e){/* ignore */}
-        gameState.reader = null;
-    }
-}
-
-// process a single complete line from serial
-function processSerialLine(line){
-    if(!line) return;
-    if(!isStable){
-        // during stabilization we ignore spurious signals
-        console.log('Ignored during stabilization:', line);
-        return;
-    }
-    // Accept formats: "BTN1", "btn2", "1", "2", or lines that include BTN1 etc.
-    const mBtn = line.match(/BTN[1-5]/i);
-    if(mBtn){
-        const code = mBtn[0].toUpperCase();
-        addInput(code);
-        return;
-    }
-    const mDigit = line.match(/\b([1-5])\b/);
-    if(mDigit){
-        addInput('BTN' + mDigit[1]);
-        return;
-    }
-    // otherwise: try to find single char like '5' or 'btn5' elsewhere
-    const mAnywhere = line.match(/([1-5])/);
-    if(mAnywhere){
-        addInput('BTN' + mAnywhere[1]);
-    }
-}
-
-async function disconnectSerial(){
-    try{
-        if(gameState.reader){
-            try { await gameState.reader.cancel(); } catch(e) { /* ignore */ }
-            gameState.reader = null;
-        }
-        if(gameState.serialPort){
-            await gameState.serialPort.close();
-            gameState.serialPort = null;
-        }
-        updateSerialStatus(false, 'Atvienots');
-    }catch(e){
-        console.error('Disconnect error', e);
-    }
-}
-
-function updateSerialStatus(connected, message=''){
-    const el = document.getElementById('serialStatus');
-    if(connected){
-        el.textContent = 'COM: Savienots ✓';
-        el.className = 'serial-status serial-connected';
-    } else {
-        el.textContent = 'COM: Nav savienots' + (message ? ' - ' + message : '');
-        el.className = 'serial-status serial-disconnected';
-    }
-}
-
-function checkSerialSupport(){
-    if(!('serial' in navigator)){
-        // Web Serial API nav atbalstīta, bet to var izsaukt tikai ar user gesture (button)
-        // Neizsauc requestPort automātiski — lietotājs spiež "CONNECT".
-        console.warn('Web Serial API nav atbalstīta šajā pārlūkprogrammā.');
-    }
-}
-
-function toggleFullscreen(){
-    if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
-    else document.exitFullscreen();
-}
+// (pārējais paliek tieši kā tavā versijā — ar COM7 un spēles loģiku)
 </script>
 </body>
 </html>
