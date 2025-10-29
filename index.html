@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💣 Bomb Puzzle Master - Viegla versija</title>
+<title>💣 Bomb Puzzle Master - GRŪTS REŽĪMS</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0c0c0c 0%,#1a1a2e 50%,#16213e 100%);color:white;min-height:100vh;overflow-x:hidden}
@@ -12,42 +12,15 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0c0c0c
 .header{text-align:center;margin-bottom:30px;position:relative}
 .title{font-size:3rem;font-weight:bold;background:linear-gradient(45deg,#ff0000,#ff6b6b,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 20px rgba(255,0,0,0.5);margin-bottom:10px}
 .subtitle{font-size:1.2rem;color:#ff6b6b;margin-bottom:20px}
-
-/* Fiksētas pogas augšējā labajā stūrī */
-.control-panel{
-    position:fixed;
-    top:10px;
-    right:10px;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-end;
-    gap:8px;
-    z-index:9999;
-    background:rgba(0,0,0,0.5);
-    padding:10px;
-    border-radius:12px;
-    border:1px solid #444;
-}
-.control-btn{
-    padding:10px 18px;
-    font-size:0.9rem;
-    font-weight:bold;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    transition:all .3s ease;
-    background:#333;
-    color:white;
-    border:2px solid #555;
-}
+.control-panel{position:fixed;top:20px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:1000}
+.control-btn{padding:12px 20px;font-size:1rem;font-weight:bold;border:none;border-radius:8px;cursor:pointer;transition:all .3s ease;background:#333;color:white;border:2px solid #555}
 .control-btn:hover{transform:scale(1.05);background:#444}
 .btn-connect{background:linear-gradient(45deg,#228B22,#32CD32);border-color:#00ff00}
 .btn-disconnect{background:linear-gradient(45deg,#cc0000,#ff4444);border-color:#ff6666}
 .btn-fullscreen{background:linear-gradient(45deg,#1a1a2e,#16213e);border-color:#00ccff}
-.serial-status{padding:6px 12px;border-radius:6px;font-weight:bold;text-align:center;font-size:0.85rem;min-width:180px}
+.serial-status{padding:10px 15px;border-radius:5px;font-weight:bold;text-align:center;min-width:200px}
 .serial-connected{background:rgba(34,139,34,0.2);color:#00ff00;border:2px solid #00ff00}
 .serial-disconnected{background:rgba(204,0,0,0.2);color:#ff4444;border:2px solid #ff4444}
-
 .columns{display:flex;gap:30px;margin-bottom:30px}
 .hints-column{flex:1;min-width:450px;position:relative}
 .game-column{flex:2;min-width:700px}
@@ -73,12 +46,13 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0c0c0c
 .history-row{display:flex;align-items:center;margin-bottom:12px;padding:12px;background:rgba(42,42,42,0.9);border-radius:8px;border-left:4px solid #00ccff}
 .victory{color:#00ff00;font-weight:bold}
 .defeat{color:#ff4444;font-weight:bold}
+@media(max-width:1200px){.columns{flex-direction:column}.control-panel{position:static;flex-direction:row;justify-content:center;margin-bottom:20px}}
 </style>
 </head>
 <body>
 <div class="fullscreen">
 <div class="control-panel">
-<button class="control-btn btn-connect" onclick="connectSerial()">🔌 CONNECT</button>
+<button class="control-btn btn-connect" onclick="connectSerial()">🔌 CONNECT COM</button>
 <button class="control-btn btn-disconnect" onclick="disconnectSerial()">🔴 DISCONNECT</button>
 <button class="control-btn btn-fullscreen" onclick="toggleFullscreen()">⤢ FULLSCREEN</button>
 <div class="serial-status serial-disconnected" id="serialStatus">COM: Nav savienots</div>
@@ -87,12 +61,12 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0c0c0c
 <div class="container">
 <div class="header">
 <h1 class="title">💣 BOMB PUZZLE MASTER</h1>
-<div class="subtitle">Vieglāks režīms <span class="difficulty-badge">NORMAL</span></div>
+<div class="subtitle">GRŪTS REŽĪMS <span class="difficulty-badge">HARD</span></div>
 </div>
 
 <div class="columns">
 <div class="hints-column">
-<h2 class="section-title">Sākotnējie pavedieni</h2>
+<h2 class="section-title">Sākotnējie pavedieni: <span class="difficulty-badge">GRŪTI</span></h2>
 <div class="hint-table" id="hintsContainer"></div>
 <button class="show-answer-btn" onclick="showAnswer()">Parādīt atbildi</button>
 </div>
@@ -113,8 +87,8 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0c0c0c
 </div>
 
 <div class="actions">
-<button class="btn btn-delete" onclick="deleteLast()">⬅️ DZĒST</button>
-<button class="btn btn-submit" onclick="submitGuess()">✅ IESNIEGT</button>
+<button class="btn btn-delete" onclick="deleteLast()">⬅️ DZĒST PEDĒJO</button>
+<button class="btn btn-submit" onclick="submitGuess()">✅ IESNIEGT KODU</button>
 </div>
 
 <div class="color-buttons" id="colorButtons"></div>
@@ -127,13 +101,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0c0c0c
 
 <script>
 const CODE_LENGTH=5, TOTAL_TIME=300, PENALTY=30;
-const COLORS={
- "BTN1":{name:"VIOLETS",color:"#8A2BE2",textColor:"white"},
- "BTN2":{name:"ZAĻŠ",color:"#2E8B57",textColor:"white"},
- "BTN3":{name:"BALTS",color:"#F8F8FF",textColor:"black"},
- "BTN4":{name:"MELNS",color:"#000000",textColor:"white"},
- "BTN5":{name:"PELĒKS",color:"#808080",textColor:"white"}
-};
+const COLORS={"BTN1":{name:"VIOLETS",color:"#8A2BE2",textColor:"white"},"BTN2":{name:"ZAĻŠ",color:"#2E8B57",textColor:"white"},"BTN3":{name:"BALTS",color:"#F8F8FF",textColor:"black"},"BTN4":{name:"MELNS",color:"#000000",textColor:"white"},"BTN5":{name:"PELĒKS",color:"#808080",textColor:"white"}};
 const ORDER=["BTN1","BTN2","BTN3","BTN4","BTN5"];
 let gameState={secret:[],current:[],timeLeft:TOTAL_TIME,timerRunning:false,gameOver:false,serialPort:null,reader:null,history:[]};
 let pregeneratedHints=[];
@@ -142,7 +110,7 @@ document.addEventListener('DOMContentLoaded',()=>{initializeGame();setupColorBut
 
 function initializeGame(){
     gameState.secret=generateSecret();
-    pregeneratedHints=generateHints();
+    pregeneratedHints=generateHardHints();
     renderHints();
     updateTimerDisplay();
     updateCurrentInput();
@@ -152,26 +120,92 @@ function generateSecret(){
     return Array.from({length:CODE_LENGTH},()=>ORDER[Math.floor(Math.random()*ORDER.length)]);
 }
 
-// Grūtāki pavedieni — vairāk sajaukti, mazāk tieši
-function generateHints(){
-    let hints=[];
-    for(let i=0;i<5;i++){
-        let hint=[...gameState.secret];
-        // Sajauc 3 elementus, lai mazāk sakrītu
-        for(let j=0;j<3;j++){
-            const a=Math.floor(Math.random()*CODE_LENGTH);
-            const b=Math.floor(Math.random()*CODE_LENGTH);
-            [hint[a],hint[b]]=[hint[b],hint[a]];
-        }
-        hints.push(hint);
-    }
+// LABOTS: Pareiza padomu ģenerēšana
+function generateHardHints(){
+    const hints = [];
+    
+    // 1. padoms: 0 pareizu vietā, 1 pareizi bet citur
+    let hint1 = generateHintWithStats(0, 1);
+    hints.push(hint1);
+    
+    // 2. padoms: 1 pareizs vietā, 0 pareizi citur  
+    let hint2 = generateHintWithStats(1, 0);
+    hints.push(hint2);
+    
+    // 3. padoms: 0 pareizu vietā, 0 pareizi citur
+    let hint3 = generateHintWithStats(0, 0);
+    hints.push(hint3);
+    
+    // 4. padoms: 1 pareizs vietā, 1 pareizs citur
+    let hint4 = generateHintWithStats(1, 1);
+    hints.push(hint4);
+    
+    // 5. padoms: 0 pareizu vietā, 2 pareizi citur
+    let hint5 = generateHintWithStats(0, 2);
+    hints.push(hint5);
+    
     return hints;
+}
+
+// LABOTS: Padomu ģenerēšana
+function generateHintWithStats(targetCorrect, targetWrongPlace) {
+    let hint = [];
+    let attempts = 0;
+    const MAX_ATTEMPTS = 100;
+    
+    // Mēģinam ģenerēt padomu, kas atbilst vēlamajiem parametriem
+    while (attempts < MAX_ATTEMPTS) {
+        hint = Array(CODE_LENGTH).fill().map(() => ORDER[Math.floor(Math.random() * ORDER.length)]);
+        const stats = evaluateHint(hint);
+        
+        if (stats.correctPos === targetCorrect && stats.wrongPlace === targetWrongPlace) {
+            return hint;
+        }
+        attempts++;
+    }
+    
+    // Ja nevar atrast ideālu, atgriežam tuvāko
+    console.log("Nevarēja ģenerēt ideālu padomu, atgriežam tuvāko");
+    return hint;
+}
+
+// LABOTS: Pareiza padomu novērtēšana BEZ masīvu modificēšanas
+function evaluateHint(hint) {
+    const secret = [...gameState.secret]; // KOPĒ
+    const hintCopy = [...hint]; // KOPĒ
+    
+    let correctPos = 0;
+    let wrongPlace = 0;
+    
+    // Vispirms atrodam pareizās vietās
+    for (let i = secret.length - 1; i >= 0; i--) {
+        if (hintCopy[i] === secret[i]) {
+            correctPos++;
+            hintCopy[i] = null; // Atzīmējam kā apstrādātu
+            secret[i] = null;
+        }
+    }
+    
+    // Tad atrodam pareizās krāsas nepareizajās vietās
+    for (let i = 0; i < hintCopy.length; i++) {
+        if (hintCopy[i] !== null) {
+            const foundIndex = secret.indexOf(hintCopy[i]);
+            if (foundIndex !== -1) {
+                wrongPlace++;
+                secret[foundIndex] = null; // Atzīmējam kā apstrādātu
+            }
+        }
+    }
+    
+    return { correctPos, wrongPlace };
 }
 
 function renderHints(){
     const c=document.getElementById('hintsContainer');
     c.innerHTML='';
-    pregeneratedHints.forEach((hint,idx)=>{
+    
+    pregeneratedHints.forEach((hint, index)=>{
+        const stats = evaluateHint(hint);
         const r=document.createElement('div');
         r.className='hint-row';
         hint.forEach(id=>{
@@ -182,22 +216,22 @@ function renderHints(){
         });
         const comment=document.createElement('span');
         comment.className='hint-comment';
-        comment.textContent = idx===0 ? "1 pareizs, 2 citur" :
-                              idx===1 ? "2 pareizi, 1 citur" :
-                              idx===2 ? "1 pareizs" :
-                              idx===3 ? "1 pareizs, bet ne vietā" :
-                              "Krāsas atkārtojas, bet kādā secībā?";
+        // TĀDS PATS FORMĀTS: "1 pareizs, 2 pareizi bet citā vietā"
+        comment.textContent = `${stats.correctPos} pareizs, ${stats.wrongPlace} pareizi bet citā vietā`;
         r.appendChild(comment);
         c.appendChild(r);
     });
 }
 
+// Parādīt atbildi
 function showAnswer(){
-    alert('Pareizā kombinācija: '+gameState.secret.map(id=>COLORS[id].name).join(', '));
+    const answer = gameState.secret.map(id=>COLORS[id].name).join(', ');
+    alert('Pareizā kombinācija: ' + answer);
 }
 
 function setupColorButtons(){
     const c=document.getElementById('colorButtons');
+    c.innerHTML='';
     ORDER.forEach(id=>{
         const col=COLORS[id];
         const b=document.createElement('button');
@@ -210,7 +244,198 @@ function setupColorButtons(){
     });
 }
 
-// (pārējais paliek tieši kā tavā versijā — ar COM7 un spēles loģiku)
+function addInput(id){
+    if(gameState.gameOver||gameState.current.length>=CODE_LENGTH)return;
+    gameState.current.push(id);
+    updateCurrentInput();
+}
+
+function deleteLast(){
+    gameState.current.pop();
+    updateCurrentInput();
+}
+
+function updateCurrentInput(){
+    const c=document.getElementById('currentInput');
+    c.innerHTML='';
+    if(!gameState.current.length){c.textContent='Izvēlies krāsas...';return;}
+    gameState.current.forEach(id=>{
+        const col=COLORS[id];
+        const t=document.createElement('span');
+        t.className='color-tag';
+        t.textContent=col.name;
+        t.style.background=col.color;
+        t.style.color=col.textColor;
+        t.style.padding='5px 10px';
+        t.style.marginRight='5px';
+        t.style.borderRadius='5px';
+        c.appendChild(t);
+    });
+    document.querySelector('.btn-submit').disabled=gameState.current.length!==CODE_LENGTH;
+}
+
+function evaluateGuess(g){
+    const s=[...gameState.secret], x=[...g];
+    let p=0,w=0;
+    for(let i=CODE_LENGTH-1;i>=0;i--){
+        if(x[i]===s[i]){
+            p++;
+            x.splice(i,1);
+            s.splice(i,1);
+        }
+    }
+    for(let g1 of x){
+        const i=s.indexOf(g1);
+        if(i!==-1){
+            w++;
+            s.splice(i,1);
+        }
+    }
+    return {correctPos:p,wrongPlace:w};
+}
+
+function submitGuess(){
+    if(gameState.current.length<CODE_LENGTH){alert('❌ Nepilns kods!'); return;}
+    const g=[...gameState.current];
+    gameState.current=[];
+    updateCurrentInput();
+    if(g.join()===gameState.secret.join()){endGame(true,g); return;}
+    const hint=evaluateGuess(g);
+    addToHistory(g,hint,'try');
+    gameState.timeLeft=Math.max(0,gameState.timeLeft-PENALTY);
+    updateTimerDisplay();
+    if(gameState.timeLeft<=0) endGame(false);
+}
+
+function addToHistory(g,h,r){
+    const c=document.getElementById('historyContainer');
+    const row=document.createElement('div');
+    row.className='history-row';
+    g.forEach(id=>{
+        const d=document.createElement('span');
+        d.className='color-dot';
+        d.style.backgroundColor=COLORS[id].color;
+        row.appendChild(d);
+    });
+    const t=document.createElement('span');
+    t.className='hint-text';
+    if(r==='win') t.textContent='🎉 UZVARA!';
+    else if(r==='lose') t.textContent='💣 ZAUDĒJUMS!';
+    else t.textContent=`🔵 ${h.correctPos} vietā, ${h.wrongPlace} citur (-${PENALTY}s)`;
+    row.appendChild(t);
+    c.appendChild(row);
+    c.scrollTop=c.scrollHeight;
+}
+
+function startTimer(){
+    if(!gameState.timerRunning&&!gameState.gameOver){
+        gameState.timerRunning=true;
+        gameState.timerInterval=setInterval(tick,1000);
+    }
+}
+
+function stopTimer(){
+    gameState.timerRunning=false;
+    if(gameState.timerInterval) clearInterval(gameState.timerInterval);
+}
+
+function tick(){
+    if(gameState.timerRunning&&!gameState.gameOver){
+        gameState.timeLeft--;
+        updateTimerDisplay();
+        if(gameState.timeLeft<=0) endGame(false);
+    }
+}
+
+function updateTimerDisplay(){
+    const m=Math.floor(gameState.timeLeft/60), s=gameState.timeLeft%60;
+    document.getElementById('timeDisplay').textContent=`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    document.getElementById('progressFill').style.width=`${(gameState.timeLeft/TOTAL_TIME)*100}%`;
+}
+
+function endGame(v,g){
+    gameState.gameOver=true;
+    stopTimer();
+    if(g) addToHistory(g,null,v?'win':'lose');
+    if(v){
+        window.location.href="https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    } else {
+        setTimeout(()=>alert('💣 Zaudēji!'),500);
+    }
+}
+
+/* ======= Web Serial API ======= */
+let dataBuffer='',isStable=false,startTime=0;
+const STABILIZE_TIME=2000;
+
+async function connectSerial(){
+    try{
+        if(!('serial'in navigator))throw new Error('Web Serial API nav atbalstīta');
+        gameState.serialPort=await navigator.serial.requestPort();
+        await gameState.serialPort.open({baudRate:9600});
+        updateSerialStatus(true);
+        isStable=false; startTime=Date.now();
+        setTimeout(()=>{isStable=true;},STABILIZE_TIME);
+        readSerialData();
+    }catch(e){
+        updateSerialStatus(false,e.message);
+        alert('Savienojuma kļūda: '+e.message);
+    }
+}
+
+async function readSerialData(){
+    const dec=new TextDecoder();
+    while(gameState.serialPort&&gameState.serialPort.readable){
+        const reader=gameState.serialPort.readable.getReader();
+        try{
+            while(true){
+                const {value,done}=await reader.read();
+                if(done) break;
+                if(value){
+                    dataBuffer+=dec.decode(value);
+                    const lines=dataBuffer.split('\n');
+                    dataBuffer=lines.pop()||'';
+                    lines.forEach(l=>handleLine(l.trim()));
+                }
+            }
+        }finally{reader.releaseLock();}
+    }
+}
+
+function handleLine(line){
+    if(!line) return;
+    if(!isStable) return;
+    const match=line.match(/BTN[1-5]/i);
+    if(match) addInput(match[0].toUpperCase());
+}
+
+async function disconnectSerial(){
+    try{
+        if(gameState.reader) await gameState.reader.cancel();
+        if(gameState.serialPort) await gameState.serialPort.close();
+        updateSerialStatus(false);
+    }catch(e){console.error(e);}
+}
+
+function updateSerialStatus(c,msg=''){
+    const el=document.getElementById('serialStatus');
+    if(c){
+        el.textContent='COM: Savienots ✓';
+        el.className='serial-status serial-connected';
+    } else {
+        el.textContent='COM: Nav savienots'+(msg?' - '+msg:'');
+        el.className='serial-status serial-disconnected';
+    }
+}
+
+function checkSerialSupport(){
+    if(!('serial'in navigator)) alert('⚠️ Web Serial API nav atbalstīta. Izmanto Chrome, Edge vai Opera.');
+}
+
+function toggleFullscreen(){
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+}
 </script>
 </body>
 </html>
